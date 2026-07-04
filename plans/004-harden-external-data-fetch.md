@@ -80,9 +80,9 @@ Target 1 — `src/features/portfolio/data/github-contributions.ts` (full file):
 import "server-only"
 
 import { unstable_cache } from "next/cache"
+import type { Activity } from "@/registry/components/contribution-graph"
 
 import { GITHUB_USERNAME } from "@/config/site"
-import type { Activity } from "@/registry/components/contribution-graph"
 
 type GitHubContributionsResponse = { contributions: Activity[] }
 
@@ -109,7 +109,6 @@ Target 2 — `src/registry/components/github-contributions/lib/get-cached-contri
 
 ```ts
 import { unstable_cache } from "next/cache"
-
 import type { Activity } from "@/registry/components/contribution-graph"
 
 type GitHubContributionsResponse = { contributions: Activity[] }

@@ -5,7 +5,7 @@
   <a href="https://github.com/ncdai/chanhdai.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/views/repo/ncdai/chanhdai.com.svg?base=8541&amp;variant=outline&amp;font=geist" /><img alt="repo views" src="https://shieldcn.dev/views/repo/ncdai/chanhdai.com.svg?base=43218&amp;variant=outline&amp;mode=light&amp;font=geist" /></picture></a>
 </p>
 
-A pixel-perfect dev portfolio and shadcn registry showcasing my work as a Design Engineer.
+A pixel-perfect dev portfolio showcasing my work as a Design Engineer.
 
 → Check out the live site: [chanhdai.com](https://chanhdai.com)
 
@@ -35,22 +35,12 @@ A pixel-perfect dev portfolio and shadcn registry showcasing my work as a Design
 
 Centralized document system powered by MDX:
 
-- Unified content layer for blog posts and component docs
+- Unified content layer for blog posts
 - Category-based content organization
 - Raw `.mdx` endpoints for AI readability
 - Syntax highlighting with code blocks
 - Dynamic OG images for rich link previews
 - RSS feed for content distribution
-
-### Registry
-
-Easily build and distribute reusable components, hooks, and pages using a custom registry powered by the [shadcn CLI](https://ui.shadcn.com/docs/cli).
-
-Each entry is well-documented and includes:
-
-- Live preview & code snippets
-- Beautiful, readable code blocks
-- One-click command blocks (pnpm, npm, yarn, bun)
 
 ## Development
 

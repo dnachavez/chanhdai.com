@@ -17,7 +17,6 @@
     "^@/hooks/(.*)$",
     "^@/components/ui/(.*)$",
     "^@/components/(.*)$",
-    "^@/registry/(.*)$",
     "^@/styles/(.*)$",
     "^@/app/(.*)$",
     "^@/features/(.*)$",

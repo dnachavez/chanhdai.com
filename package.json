@@ -1,7 +1,7 @@
 {
   "name": "chanhdai.com",
   "version": "0.1.0",
-  "description": "A pixel-perfect dev portfolio and shadcn registry.",
+  "description": "A pixel-perfect dev portfolio.",
   "homepage": "https://chanhdai.com",
   "license": "MIT",
   "author": {
@@ -22,9 +22,9 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm registry:build && next build",
+    "build": "next build",
     "start": "next start",
-    "preview": "pnpm registry:build && next build && next start",
+    "preview": "next build && next start",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint . --cache --cache-location .eslintcache",
@@ -32,12 +32,6 @@
     "check-types": "tsc --noEmit --pretty",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,md,mdx}\" --cache",
-    "registry:build": "bun run ./src/scripts/build-registry.mts && shadcn build",
-    "registry:validate": "shadcn registry validate ./public/r/registry.json",
-    "capture": "bun run ./src/scripts/capture.mts",
-    "capture:sync": "bun run ./src/scripts/capture-sync.mts",
-    "icons:dev": "bun run ./src/scripts/build-icons.ts --watch",
-    "icons:build": "bun run ./src/scripts/build-icons.ts",
     "generate-libphonenumber-metadata": "libphonenumber-metadata-generator ./src/assets/libphonenumber.metadata.json --countries VN --extended",
     "upgrade:next": "npx @next/codemod@latest upgrade latest",
     "upgrade:tailwind": "npx @tailwindcss/upgrade@latest",

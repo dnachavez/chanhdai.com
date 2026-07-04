@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react"
 import { useTheme } from "next-themes"
 
-import { SpinningCircularText } from "@/registry/components/spinning-circular-text"
+import { SpinningCircularText } from "@/components/spinning-circular-text"
 
 const TEXT = "CRAFTED WITH CARE BY NCDAI • "
 const DURATION = 4
