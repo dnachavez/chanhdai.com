@@ -17,8 +17,8 @@ import {
   TestimonialAvatarImg,
   TestimonialAvatarRing,
   TestimonialQuote,
-} from "@/registry/components/testimonial"
-import { Twemoji } from "@/registry/components/twemoji/twemoji"
+} from "@/components/testimonial"
+import { Twemoji } from "@/components/twemoji"
 import {
   TESTIMONIALS_1,
   TESTIMONIALS_2,

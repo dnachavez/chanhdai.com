@@ -12,7 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/base/ui/tabs"
-import { IconSwap, IconSwapItem } from "@/registry/components/icon-swap"
+import { IconSwap, IconSwapItem } from "@/components/icon-swap"
 
 import { CopyButton } from "./copy-button"
 import { getIconForPackageManager } from "./icons"

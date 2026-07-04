@@ -43,10 +43,9 @@ export const PROJECTS: Project[] = [
       "Base UI",
       "Motion",
       "shadcn/ui",
-      "shadcn registry",
       "Vercel",
     ],
-    description: "A pixel-perfect dev portfolio and shadcn registry.",
+    description: "A pixel-perfect dev portfolio.",
     logo: "https://assets.chanhdai.com/images/project-logos/chanhdaidotcom.svg",
   },
   {

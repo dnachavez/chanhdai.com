@@ -24,9 +24,9 @@ import {
   TestimonialAvatarImg,
   TestimonialAvatarRing,
   TestimonialQuote,
-} from "@/registry/transformed/components/testimonial"
-import { TestimonialSpotlight } from "@/registry/transformed/components/testimonial-spotlight"
-import { Twemoji } from "@/registry/transformed/components/twemoji/twemoji"
+} from "@/components/testimonial"
+import { TestimonialSpotlight } from "@/components/testimonial-spotlight"
+import { Twemoji } from "@/components/twemoji"
 import { SOCIAL } from "@/features/portfolio/data/social-links"
 import {
   TESTIMONIALS_1,

@@ -41,20 +41,13 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command"
-import { ComponentIcon } from "@/features/doc/components/component-icon"
 import type { DocPreview } from "@/features/doc/types/document"
 import { SOCIAL_ICONS } from "@/features/portfolio/components/social-link-icons"
 import { SOCIAL_LINKS } from "@/features/portfolio/data/social-links"
 
 import { ChanhDaiMark, getMarkSVG } from "./chanhdai-mark"
 import { getWordmarkSVG } from "./chanhdai-wordmark"
-import {
-  FavouriteIcon,
-  GridViewIcon,
-  NewsIcon,
-  ReactIcon,
-  SearchIcon,
-} from "./icons"
+import { FavouriteIcon, NewsIcon, SearchIcon } from "./icons"
 import { Button } from "./ui/button"
 import { Kbd, KbdGroup } from "./ui/kbd"
 
@@ -71,12 +64,6 @@ type CommandLinkItem = {
   openInNewTab?: boolean
 }
 
-type BlockItem = {
-  name: string
-  description: string
-  categories: string[]
-}
-
 const MENU_LINKS: CommandLinkItem[] = [
   {
     title: "Home",
@@ -84,20 +71,6 @@ const MENU_LINKS: CommandLinkItem[] = [
     kind: "page",
     icon: <ChanhDaiMark />,
     shortcut: "GH",
-  },
-  {
-    title: "Components",
-    href: "/components",
-    kind: "page",
-    icon: <ReactIcon />,
-    shortcut: "GC",
-  },
-  {
-    title: "Blocks",
-    href: "/blocks",
-    kind: "page",
-    icon: <GridViewIcon />,
-    shortcut: "GB",
   },
   {
     title: "Blog",
@@ -212,11 +185,9 @@ const OTHER_LINK_ITEMS: CommandLinkItem[] = [
 
 export function CommandMenu({
   docs,
-  blocks,
   enabledHotkeys = false,
 }: {
   docs: DocPreview[]
-  blocks: BlockItem[]
   enabledHotkeys?: boolean
 }) {
   const router = useRouter()
@@ -309,77 +280,6 @@ export function CommandMenu({
     [click, setTheme]
   )
 
-  const components = useMemo(
-    () =>
-      docs
-        .filter((doc) => doc.category === "components")
-        .sort((a, b) =>
-          a.title.localeCompare(b.title, "en", {
-            sensitivity: "base",
-          })
-        ),
-    [docs]
-  )
-
-  const componentsGroup = useMemo(() => {
-    if (!components || components.length === 0) {
-      return null
-    }
-
-    return (
-      <CommandGroup heading="Components">
-        {components.map((component) => {
-          return (
-            <CommandMenuItem
-              key={component.slug}
-              keywords={["component"]}
-              onHighlight={() => {
-                setSelectedCommandKind("component")
-              }}
-              onSelect={() => {
-                handleOpenLink(`/components/${component.slug}`)
-              }}
-            >
-              <ComponentIcon slug={component.slug} />
-              <p className="line-clamp-1">{component.title}</p>
-            </CommandMenuItem>
-          )
-        })}
-      </CommandGroup>
-    )
-  }, [components, handleOpenLink])
-
-  const blocksGroup = useMemo(() => {
-    if (!blocks || blocks.length === 0) {
-      return null
-    }
-
-    return (
-      <CommandGroup heading="Blocks">
-        {blocks.map((block) => {
-          return (
-            <CommandMenuItem
-              key={block.name}
-              keywords={["block"]}
-              onHighlight={() => {
-                setSelectedCommandKind("block")
-              }}
-              onSelect={() => {
-                handleOpenLink(`/blocks/${block.categories[0]}/${block.name}`)
-              }}
-            >
-              <GridViewIcon />
-              <p className="line-clamp-1">{block.description}</p>
-              <span className="ml-auto font-mono text-xs font-normal text-muted-foreground tabular-nums max-sm:hidden">
-                {block.name}
-              </span>
-            </CommandMenuItem>
-          )
-        })}
-      </CommandGroup>
-    )
-  }, [blocks, handleOpenLink])
-
   const blogLinks = useMemo(
     () =>
       docs
@@ -435,10 +335,6 @@ export function CommandMenu({
               onLinkHighlight={handleLinkHighlight}
               onLinkSelect={handleOpenLink}
             />
-
-            {componentsGroup}
-
-            {blocksGroup}
 
             <CommandLinkGroup
               heading="Blog"

@@ -78,7 +78,7 @@ async function getContent() {
 
 # chanhdai.com
 
-> A pixel-perfect dev portfolio and shadcn registry showcasing my work as a Design Engineer.
+> A pixel-perfect dev portfolio showcasing my work as a Design Engineer.
 
 ${aboutText}
 ${experienceText}

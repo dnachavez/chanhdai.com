@@ -5,8 +5,8 @@ import { useTheme } from "next-themes"
 
 import { cn } from "@/lib/utils"
 import { ChanhDaiMark } from "@/components/chanhdai-mark"
+import { DotGridSpotlight } from "@/components/dot-grid-spotlight"
 import { Magnet } from "@/components/react-bits/magnet"
-import { DotGridSpotlight } from "@/registry/transformed/components/dot-grid-spotlight"
 
 const DOT_COLOR = {
   light: {
