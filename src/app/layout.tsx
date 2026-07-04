@@ -80,24 +80,24 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "https://assets.chanhdai.com/images/favicon.ico",
+        url: "/images/favicon.ico",
         sizes: "32x32",
       },
       {
-        url: "https://assets.chanhdai.com/images/favicon.svg",
+        url: "/images/favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "https://assets.chanhdai.com/images/favicon-dark.svg",
+        url: "/images/favicon-dark.svg",
         sizes: "any",
         type: "image/svg+xml",
         media: "(prefers-color-scheme: dark)",
       },
     ],
     apple: {
-      url: "https://assets.chanhdai.com/images/apple-touch-icon.png",
+      url: "/images/apple-touch-icon.png",
       type: "image/png",
       sizes: "180x180",
     },

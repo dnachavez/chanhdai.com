@@ -39,16 +39,15 @@ Passionate about exploring new technologies and turning ideas into reality throu
 
 Creator of [chanhdai.com](https://github.com/ncdai/chanhdai.com) (2k stars), [React Wheel Picker](https://react-wheel-picker.chanhdai.com) (30k+ weekly downloads, ▲Vercel OSS Program), and [ZaDark](https://zadark.com) (80k+ downloads, 30k+ users) — peak metrics.
 `,
-  avatar: "https://assets.chanhdai.com/images/chanhdai-avatar-ghibli.webp",
+  avatar: "/images/chanhdai-avatar-ghibli.webp",
   avatarVariants: {
-    lightOff: "https://assets.chanhdai.com/images/avatar-light-off.webp",
-    lightOn: "https://assets.chanhdai.com/images/avatar-light-on.webp",
-    darkOff: "https://assets.chanhdai.com/images/avatar-dark-off.webp",
-    darkOn: "https://assets.chanhdai.com/images/avatar-dark-on.webp",
+    lightOff: "/images/avatar-light-off.webp",
+    lightOn: "/images/avatar-light-on.webp",
+    darkOff: "/images/avatar-dark-off.webp",
+    darkOn: "/images/avatar-dark-on.webp",
   },
-  ogImage:
-    "https://assets.chanhdai.com/images/screenshot-og-image-dark.png?t=1778602757",
-  namePronunciationUrl: "https://assets.chanhdai.com/audio/chanhdai.mp3",
+  ogImage: "/images/screenshot-og-image-dark.png",
+  namePronunciationUrl: "/audio/chanhdai.mp3",
   timeZone: "Asia/Ho_Chi_Minh",
   keywords: [
     "ncdai",
