@@ -383,10 +383,7 @@ export function CommandMenu({
               </CommandMenuItem>
 
               <CommandMenuItem onHighlight={handleCommandHighlight} asChild>
-                <a
-                  href="https://assets.chanhdai.com/chanhdai-brand.zip"
-                  download
-                >
+                <a href="/chanhdai-brand.zip" download>
                   <DownloadIcon />
                   Download Brand Assets
                 </a>
