@@ -45,7 +45,6 @@ negligible (so we don't take MED risk for no gain).
 "use client"
 
 import React, { useMemo, useState } from "react"
-
 // ...
 import { Index } from "@/registry/__index__"
 
