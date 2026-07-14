@@ -2,7 +2,11 @@ import { AWARDS } from "@/features/portfolio/data/awards"
 
 const content = `# Awards
 
-${AWARDS.map((item) => `## ${item.prize} | ${item.title}\n\n${item.description}`).join("\n\n")}
+${AWARDS.map((item) =>
+  [`## ${item.prize} | ${item.title}`, item.description]
+    .filter(Boolean)
+    .join("\n\n")
+).join("\n\n")}
 `
 
 export const revalidate = false

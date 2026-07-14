@@ -10,7 +10,7 @@ Next.js 16 (App Router) portfolio and blog website.
 | -------------------------------------- | ------------------------------------------------------ |
 | `src/app/`                             | App Router pages, layouts, API routes                  |
 | `src/components/`                      | Shared UI components                                   |
-| `src/features/`                        | Feature modules: `doc`, `blog`, `portfolio`, `sponsor` |
+| `src/features/`                        | Feature modules: `doc`, `blog`, `portfolio`            |
 | `src/config/`                          | Site (`site.ts`), JSON-LD config                       |
 | `src/hooks/`, `src/lib/`, `src/utils/` | Hooks, libraries, utilities                            |
 

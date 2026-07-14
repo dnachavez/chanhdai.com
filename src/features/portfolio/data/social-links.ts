@@ -6,39 +6,45 @@ import type { SocialProfile } from "@/features/portfolio/types/social-links"
  * so adding a profile here forces the icon map to stay in sync at compile time.
  */
 export const SOCIAL = {
-  x: {
-    title: "X",
-    handle: "@iamncdai",
-    href: "https://x.com/iamncdai",
-    sameAs: true,
-  },
   github: {
     title: "GitHub",
-    handle: "ncdai",
-    href: "https://github.com/ncdai",
+    handle: "dnachavez",
+    href: "https://github.com/dnachavez",
     sameAs: true,
   },
   linkedin: {
     title: "LinkedIn",
-    handle: "ncdai",
-    href: "https://linkedin.com/in/ncdai",
+    handle: "dnachavez",
+    href: "https://linkedin.com/in/dnachavez",
     sameAs: true,
   },
-  dailydotdev: {
-    title: "daily.dev",
-    handle: "@ncdai",
-    href: "https://app.daily.dev/ncdai",
+  x: {
+    title: "X",
+    handle: "@dnachavez_dev",
+    href: "https://x.com/dnachavez_dev",
     sameAs: true,
   },
   discord: {
     title: "Discord",
-    handle: "ncdai",
-    href: "https://discord.com/users/1186630645443739651",
+    handle: "dnachavez",
+    href: "https://discord.com/users/1212759422594719804",
   },
-  youtube: {
-    title: "YouTube",
-    handle: "@ncdai",
-    href: "https://www.youtube.com/@ncdai",
+  instagram: {
+    title: "Instagram",
+    handle: "@dnachavez.dev",
+    href: "https://instagram.com/dnachavez.dev",
+    sameAs: true,
+  },
+  tiktok: {
+    title: "TikTok",
+    handle: "@dnachavez",
+    href: "https://tiktok.com/@dnachavez",
+    sameAs: true,
+  },
+  facebook: {
+    title: "Facebook",
+    handle: "dnachavez.dev",
+    href: "https://www.facebook.com/dnachavez.dev",
     sameAs: true,
   },
 } satisfies Record<string, SocialProfile>

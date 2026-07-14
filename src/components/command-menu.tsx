@@ -5,7 +5,6 @@ import { copyToClipboardWithEvent } from "@/utils/copy"
 import { useRouter } from "@bprogress/next/app"
 import { useTiks } from "@rexa-developer/tiks/react"
 import {
-  BookmarkIcon,
   BoxIcon,
   BriefcaseBusinessIcon,
   CircleCheckBigIcon,
@@ -20,7 +19,6 @@ import {
   MoonStarIcon,
   QuoteIcon,
   RssIcon,
-  SquareDashedIcon,
   SunMediumIcon,
   TextInitialIcon,
   TypeIcon,
@@ -47,7 +45,7 @@ import { SOCIAL_LINKS } from "@/features/portfolio/data/social-links"
 
 import { ChanhDaiMark, getMarkSVG } from "./chanhdai-mark"
 import { getWordmarkSVG } from "./chanhdai-wordmark"
-import { FavouriteIcon, NewsIcon, SearchIcon } from "./icons"
+import { NewsIcon, SearchIcon } from "./icons"
 import { Button } from "./ui/button"
 import { Kbd, KbdGroup } from "./ui/kbd"
 
@@ -78,13 +76,6 @@ const MENU_LINKS: CommandLinkItem[] = [
     kind: "page",
     icon: <NewsIcon />,
     shortcut: "GL",
-  },
-  {
-    title: "Sponsors",
-    href: "/sponsors",
-    kind: "page",
-    icon: <FavouriteIcon />,
-    shortcut: "GS",
   },
   {
     title: "Testimonials",
@@ -137,12 +128,6 @@ const PORTFOLIO_LINKS: CommandLinkItem[] = [
     href: "/#certs",
     kind: "page",
     icon: <CircleCheckBigIcon />,
-  },
-  {
-    title: "Bookmarks",
-    href: "/#bookmarks",
-    kind: "page",
-    icon: <BookmarkIcon />,
   },
   {
     title: "Insights",
@@ -370,16 +355,6 @@ export function CommandMenu({
               >
                 <TypeIcon />
                 Copy Logotype as SVG
-              </CommandMenuItem>
-
-              <CommandMenuItem
-                onHighlight={() => {
-                  setSelectedCommandKind("link")
-                }}
-                onSelect={() => handleOpenLink("/blog/chanhdai-brand")}
-              >
-                <SquareDashedIcon />
-                Brand Guidelines
               </CommandMenuItem>
 
               <CommandMenuItem onHighlight={handleCommandHighlight} asChild>
