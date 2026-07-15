@@ -6,13 +6,13 @@ Next.js 16 (App Router) portfolio and blog website.
 
 ## Project structure
 
-| Directory                              | Purpose                                                |
-| -------------------------------------- | ------------------------------------------------------ |
-| `src/app/`                             | App Router pages, layouts, API routes                  |
-| `src/components/`                      | Shared UI components                                   |
-| `src/features/`                        | Feature modules: `doc`, `blog`, `portfolio`, `sponsor` |
-| `src/config/`                          | Site (`site.ts`), JSON-LD config                       |
-| `src/hooks/`, `src/lib/`, `src/utils/` | Hooks, libraries, utilities                            |
+| Directory                              | Purpose                                     |
+| -------------------------------------- | ------------------------------------------- |
+| `src/app/`                             | App Router pages, layouts, API routes       |
+| `src/components/`                      | Shared UI components                        |
+| `src/features/`                        | Feature modules: `doc`, `blog`, `portfolio` |
+| `src/config/`                          | Site (`site.ts`), JSON-LD config            |
+| `src/hooks/`, `src/lib/`, `src/utils/` | Hooks, libraries, utilities                 |
 
 **Key files**: `components.json` (shadcn config), `src/features/portfolio/data/` (portfolio data), `.env.example` (env vars)
 

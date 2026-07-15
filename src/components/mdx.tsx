@@ -31,7 +31,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/base/ui/tabs"
-import { DocSponsors } from "@/features/doc/components/doc-sponsors"
 
 import { Callout } from "./callout"
 import { FramedImage, IframeEmbed, YouTubeEmbed } from "./embed"
@@ -82,7 +81,6 @@ const components: MDXRemoteProps["components"] = {
   YouTubeEmbed,
   IframeEmbed,
   FramedImage,
-  DocSponsors,
 }
 
 const options: MDXRemoteProps["options"] = {

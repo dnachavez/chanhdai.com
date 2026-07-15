@@ -27,7 +27,6 @@ import {
 } from "@/components/testimonial"
 import { TestimonialSpotlight } from "@/components/testimonial-spotlight"
 import { Twemoji } from "@/components/twemoji"
-import { SOCIAL } from "@/features/portfolio/data/social-links"
 import {
   TESTIMONIALS_1,
   TESTIMONIALS_2,
@@ -64,13 +63,7 @@ export function Testimonials() {
   return (
     <Panel ref={ref} id={ID}>
       <PanelHeader>
-        <PanelTitle>
-          Trusted by
-          <span className="block sm:hidden" /> top builders on{" "}
-          <a href={SOCIAL.x.href} target="_blank" rel="noopener" aria-label="X">
-            𝕏
-          </a>
-        </PanelTitle>
+        <PanelTitle>Trusted by clients</PanelTitle>
       </PanelHeader>
 
       <div className="grid gap-4 py-4 sm:hidden">
@@ -93,18 +86,22 @@ export function Testimonials() {
           </TestimonialSpotlight>
         ))}
 
-        <TestimonialsMarquee
-          className="sm:col-span-2"
-          data={TESTIMONIALS_1_FILTERED}
-          play={play}
-        />
+        {TESTIMONIALS_1_FILTERED.length > 0 && (
+          <TestimonialsMarquee
+            className="sm:col-span-2"
+            data={TESTIMONIALS_1_FILTERED}
+            play={play}
+          />
+        )}
 
-        <TestimonialsMarquee
-          className="sm:col-span-2"
-          data={TESTIMONIALS_2_FILTERED}
-          direction="right"
-          play={play}
-        />
+        {TESTIMONIALS_2_FILTERED.length > 0 && (
+          <TestimonialsMarquee
+            className="sm:col-span-2"
+            data={TESTIMONIALS_2_FILTERED}
+            direction="right"
+            play={play}
+          />
+        )}
       </PanelContent>
 
       <div className="screen-line-top flex justify-center py-2">

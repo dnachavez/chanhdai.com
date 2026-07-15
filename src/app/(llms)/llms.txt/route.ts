@@ -3,7 +3,7 @@ import { getBlogPosts } from "@/features/doc/data/documents"
 
 const allPosts = getBlogPosts()
 
-const content = `# chanhdai.com
+const content = `# dnachavez.dev
 
 > A pixel-perfect dev portfolio showcasing my work as a Design Engineer.
 

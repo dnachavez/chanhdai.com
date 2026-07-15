@@ -25,7 +25,7 @@ import {
 } from "@/features/portfolio/data/testimonials"
 
 const title = "Testimonials"
-const description = "Trusted by top builders."
+const description = "Trusted by clients."
 
 const ogImage = `/og/simple?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
 
@@ -76,9 +76,7 @@ export default function TestimonialsPage() {
       <div className="min-h-svh">
         <PageHeading>
           <PageHeadingTagline>Testimonials</PageHeadingTagline>
-          <PageHeadingTitle>
-            Trusted by top builders on <span aria-label="X">𝕏</span>
-          </PageHeadingTitle>
+          <PageHeadingTitle>Trusted by clients</PageHeadingTitle>
         </PageHeading>
 
         <div className="relative pt-4">

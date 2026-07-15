@@ -49,7 +49,7 @@ Then, update the necessary environment variables inside `.env.local`.
 pnpm dev
 ```
 
-The application should now be available at https://ncdai.localhost
+The application should now be available at https://dnachavez.localhost
 
 ## Building for Production
 

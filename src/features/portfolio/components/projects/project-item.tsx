@@ -81,24 +81,26 @@ export function ProjectItem({
               </dl>
             </div>
 
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <a
-                    className="relative flex size-6 shrink-0 items-center justify-center text-muted-foreground after:absolute after:-inset-2 hover:text-foreground"
-                    href={addQueryParams(project.link, UTM_PARAMS)}
-                    target="_blank"
-                    rel="noopener"
-                    aria-label="Open project"
-                  >
-                    <LinkIcon className="pointer-events-none size-4" />
-                  </a>
-                }
-              />
-              <TooltipContent>
-                <p>Open project</p>
-              </TooltipContent>
-            </Tooltip>
+            {project.link && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <a
+                      className="relative flex size-6 shrink-0 items-center justify-center text-muted-foreground after:absolute after:-inset-2 hover:text-foreground"
+                      href={addQueryParams(project.link, UTM_PARAMS)}
+                      target="_blank"
+                      rel="noopener"
+                      aria-label="Open project"
+                    >
+                      <LinkIcon className="pointer-events-none size-4" />
+                    </a>
+                  }
+                />
+                <TooltipContent>
+                  <p>Open project</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
 
             <div className="shrink-0 text-muted-foreground [&_svg]:size-4">
               <CollapsibleChevronsUpDownIcon duration={0.15} />

@@ -139,7 +139,7 @@ function formatDuration(start: string, end?: string): string {
     if (years <= 0) {
       return ""
     }
-    return `${years}y`
+    return pluralize(years, "year")
   }
 
   const startDate = parsePeriodDate(start, "first")
@@ -151,16 +151,20 @@ function formatDuration(start: string, end?: string): string {
     return ""
   }
 
-  if (totalMonths < 12) {
-    return `${totalMonths}m`
-  }
-
   const years = Math.floor(totalMonths / 12)
   const months = totalMonths % 12
-  if (months === 0) {
-    return `${years}y`
+
+  if (years === 0) {
+    return pluralize(months, "month")
   }
-  return `${years}y ${months}m`
+  if (months === 0) {
+    return pluralize(years, "year")
+  }
+  return `${pluralize(years, "year")} and ${pluralize(months, "month")}`
+}
+
+function pluralize(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`
 }
 
 function parsePeriodDate(str: string, fallbackMonth: "first" | "last"): Date {

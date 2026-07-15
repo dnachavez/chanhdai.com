@@ -12,8 +12,8 @@ export type Project = {
     /** End date; leave undefined for "Present". */
     end?: string
   }
-  /** Public URL (site, repository, demo, or video). */
-  link: string
+  /** Public URL (site, repository, demo, or video). Omit when the project has no public link. */
+  link?: string
   /** Tags/technologies for chips or filtering. */
   skills: string[]
   /** Optional rich description; Markdown and line breaks supported. */

@@ -1,24 +1,24 @@
 {
-  "name": "chanhdai.com",
+  "name": "dnachavez.dev",
   "version": "0.1.0",
   "description": "A pixel-perfect dev portfolio.",
-  "homepage": "https://chanhdai.com",
+  "homepage": "https://dnachavez.dev",
   "license": "MIT",
   "author": {
-    "name": "Nguyen Chanh Dai",
-    "email": "dai@chanhdai.com",
-    "url": "https://github.com/ncdai"
+    "name": "Dan Chavez",
+    "email": "dan@dnachavez.dev",
+    "url": "https://github.com/dnachavez"
   },
   "contributors": [
     {
-      "name": "Nguyen Chanh Dai",
-      "email": "dai@chanhdai.com",
-      "url": "https://github.com/ncdai"
+      "name": "Dan Chavez",
+      "email": "dan@dnachavez.dev",
+      "url": "https://github.com/dnachavez"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ncdai/chanhdai.com.git"
+    "url": "git+https://github.com/dnachavez/dnachavez.dev.git"
   },
   "scripts": {
     "dev": "next dev",

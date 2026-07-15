@@ -48,15 +48,20 @@ ${EXPERIENCES.map((item) =>
 const projectsText = `## Projects
 
 ${PROJECTS.map((item) => {
+  const url = item.link ? `\n\nProject URL: ${item.link}` : ""
   const skills = `\n\nSkills: ${item.skills.join(", ")}`
   const description = item.description ? `\n\n${item.description.trim()}` : ""
-  return `### ${item.title}\n\nProject URL: ${item.link}${skills}${description}`
+  return `### ${item.title}${url}${skills}${description}`
 }).join("\n\n")}
 `
 
 const awardsText = `## Awards
 
-${AWARDS.map((item) => `### ${item.prize} | ${item.title}\n\n${item.description}`).join("\n\n")}
+${AWARDS.map((item) =>
+  [`### ${item.prize} | ${item.title}`, item.description]
+    .filter(Boolean)
+    .join("\n\n")
+).join("\n\n")}
 `
 
 const certificationsText = `## Certifications
@@ -76,7 +81,7 @@ async function getBlogContent() {
 async function getContent() {
   return `<SYSTEM>This document contains comprehensive information about ${USER.displayName}'s professional profile, portfolio, and blog content. It includes personal details, work experience, projects, achievements, certifications, and all published blog posts. This data is formatted for consumption by Large Language Models (LLMs) to provide accurate and up-to-date information about ${USER.displayName}'s background, skills, and expertise as a Design Engineer.</SYSTEM>
 
-# chanhdai.com
+# dnachavez.dev
 
 > A pixel-perfect dev portfolio showcasing my work as a Design Engineer.
 
