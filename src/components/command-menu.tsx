@@ -11,6 +11,7 @@ import {
   DownloadIcon,
   FileTextIcon,
   GraduationCapIcon,
+  LaptopMinimalIcon,
   LayersIcon,
   LineChartIcon,
   MonitorIcon,
@@ -93,6 +94,12 @@ const PORTFOLIO_LINKS: CommandLinkItem[] = [
     href: "/#stack",
     kind: "page",
     icon: <LayersIcon />,
+  },
+  {
+    title: "Gear",
+    href: "/#gear",
+    kind: "page",
+    icon: <LaptopMinimalIcon />,
   },
   {
     title: "Experience",

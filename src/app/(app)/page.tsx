@@ -10,6 +10,7 @@ import { Blog } from "@/features/portfolio/components/blog"
 import { Certifications } from "@/features/portfolio/components/certifications"
 import { Education } from "@/features/portfolio/components/education"
 import { Experiences } from "@/features/portfolio/components/experiences"
+import { Gear } from "@/features/portfolio/components/gear"
 import { GitHubContributions } from "@/features/portfolio/components/github-contributions"
 import { Hello } from "@/features/portfolio/components/hello"
 import {
@@ -55,6 +56,9 @@ export default function HomePage() {
           <Separator />
 
           <TechStack />
+          <Separator />
+
+          <Gear />
           <Separator />
 
           <Experiences />
