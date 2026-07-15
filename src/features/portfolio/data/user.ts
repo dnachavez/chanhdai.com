@@ -48,12 +48,12 @@ export const USER: User = {
 - Graduated **Magna Cum Laude** (1.44 GPA), B.S. in Computer Science — University of Southern Philippines Foundation
 <p class="text-muted-foreground">* Metrics based on production data during tenure; actual current figures may vary.</p>
 `,
-  avatar: "/images/chanhdai-avatar-ghibli.webp",
+  avatar: "/images/dnachavez-avatar.webp",
   avatarVariants: {
-    lightOff: "/images/avatar-light-off.webp",
-    lightOn: "/images/avatar-light-on.webp",
-    darkOff: "/images/avatar-dark-off.webp",
-    darkOn: "/images/avatar-dark-on.webp",
+    lightOff: "/images/dnachavez-avatar.webp",
+    lightOn: "/images/dnachavez-avatar.webp",
+    darkOff: "/images/dnachavez-avatar.webp",
+    darkOn: "/images/dnachavez-avatar.webp",
   },
   ogImage: "/images/screenshot-og-image-dark.png",
   namePronunciationUrl: "/audio/chanhdai.mp3",
