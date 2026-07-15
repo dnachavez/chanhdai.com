@@ -56,7 +56,7 @@ export const USER: User = {
     darkOn: "/images/dnachavez-avatar.webp",
   },
   ogImage: "/images/screenshot-og-image-dark.png",
-  namePronunciationUrl: "/audio/chanhdai.mp3",
+  namePronunciationUrl: "/audio/dnachavez.mp3",
   timeZone: "Asia/Manila",
   keywords: [
     // Name and handles
