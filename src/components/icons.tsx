@@ -625,7 +625,7 @@ export function FavouriteIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-// Designed by @ncdai
+// Designed by @dnachavez
 export function TrustedRegistryIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
