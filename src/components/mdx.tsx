@@ -33,7 +33,7 @@ import {
 } from "@/components/base/ui/tabs"
 
 import { Callout } from "./callout"
-import { FramedImage, IframeEmbed, YouTubeEmbed } from "./embed"
+import { FramedImage, Gallery, IframeEmbed, Photo, YouTubeEmbed } from "./embed"
 import { Heading } from "./heading"
 import { mdxCodeBlockComponents } from "./mdx-code-block"
 
@@ -81,6 +81,8 @@ const components: MDXRemoteProps["components"] = {
   YouTubeEmbed,
   IframeEmbed,
   FramedImage,
+  Gallery,
+  Photo,
 }
 
 const options: MDXRemoteProps["options"] = {
