@@ -25,7 +25,7 @@ export const EXPERIENCES: Experience[] = [
     positions: [
       {
         id: "1",
-        title: "Full-stack Developer",
+        title: "Senior Full-stack Developer",
         employmentPeriod: {
           start: "02.2026",
         },

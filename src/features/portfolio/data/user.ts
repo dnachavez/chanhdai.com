@@ -18,10 +18,10 @@ export const USER: User = {
   phoneNumberB64: "KzYzOTU2MzkwMTgxMw==", // E.164 format, base64 encoded (https://t.io.vn/base64-string-converter)
   emailB64: "ZG5hLmNoYXZlekBvdXRsb29rLmNvbQ==", // base64 encoded
   website: "https://www.dnachavez.dev",
-  jobTitle: "Full Stack Developer",
+  jobTitle: "Senior Full Stack Developer",
   jobs: [
     {
-      title: "Full Stack Developer",
+      title: "Senior Full Stack Developer",
       company: "Aeva AI Receptionist",
       website: "https://www.aevaai.com",
       experienceId: "aeva",
@@ -34,7 +34,7 @@ export const USER: User = {
 - Full Stack & AI Engineer at [Tolstoy](https://gotolstoy.com): AI communication system for interactive video platform
   - Serving 10,000+ businesses with sub-3s response times
   - Scaled serverless infrastructure 3x (30k→90k monthly requests) at 99.9% uptime
-- Full Stack Developer at [Aeva AI Receptionist](https://www.aevaai.com): AI-powered phone receptionist for healthcare clinics
+- Senior Full Stack Developer at [Aeva AI Receptionist](https://www.aevaai.com): AI-powered phone receptionist for healthcare clinics
   - Spearheading end-to-end platform development with the CTO, broadening market reach ~40% by integrating new practice management systems
   - Eliminated 100% of missed-notification issues and cut incident resolution 60% by re-architecting core agents from Make.com to Node.js
 - Founding Engineer at [Framework](https://frameworkos.ai): solo-built AI responder and task manager from zero to production
