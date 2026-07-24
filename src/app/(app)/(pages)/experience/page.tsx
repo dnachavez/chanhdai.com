@@ -7,7 +7,7 @@ import { baseOpenGraph } from "@/lib/metadata"
 import { absoluteUrl } from "@/lib/utils"
 import {
   PageHeading,
-  PageHeadingTagline,
+  PageHeadingBackLink,
   PageHeadingTitle,
 } from "@/components/page-heading"
 import { ExperienceList } from "@/features/portfolio/components/experiences"
@@ -126,8 +126,8 @@ export default function Page() {
 
       <div className="min-h-svh">
         <PageHeading>
-          <PageHeadingTagline>{title}</PageHeadingTagline>
-          <PageHeadingTitle>{tagline}</PageHeadingTitle>
+          <PageHeadingBackLink href="/">Home</PageHeadingBackLink>
+          <PageHeadingTitle>{title}</PageHeadingTitle>
         </PageHeading>
 
         <div className="screen-line-bottom pr-2 pl-4">
