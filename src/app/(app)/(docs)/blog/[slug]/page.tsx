@@ -21,6 +21,7 @@ import {
 import { MDX } from "@/components/mdx"
 import { TOCInline } from "@/components/toc-inline"
 import { TOCMinimap } from "@/components/toc-minimap"
+import { DocByline } from "@/features/doc/components/doc-byline"
 import { DocKeyboardShortcuts } from "@/features/doc/components/doc-keyboard-shortcuts"
 import {
   DocContainer,
@@ -37,6 +38,7 @@ import {
   getBlogPosts,
   getDocBySlug,
 } from "@/features/doc/data/documents"
+import { getReadingTimeMinutes } from "@/features/doc/lib/reading-time"
 import type { Doc } from "@/features/doc/types/document"
 
 export const revalidate = false
@@ -260,6 +262,12 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
           >
             {doc.metadata.title}
           </h1>
+
+          <DocByline
+            createdAt={doc.metadata.createdAt}
+            updatedAt={doc.metadata.updatedAt}
+            readingTimeMinutes={getReadingTimeMinutes(doc.content)}
+          />
         </DocContainer>
 
         <DocGrid>
