@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { X_HANDLE } from "@/config/site"
 import { jsonLdBreadcrumbList, JsonLdScript } from "@/lib/json-ld"
+import { baseOpenGraph } from "@/lib/metadata"
 import { cn } from "@/lib/utils"
 import {
   PageHeading,
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
     canonical: "/testimonials",
   },
   openGraph: {
+    ...baseOpenGraph,
     url: "/testimonials",
     type: "website",
     images: {

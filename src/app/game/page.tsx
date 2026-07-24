@@ -4,15 +4,27 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { X_HANDLE } from "@/config/site"
+import { baseOpenGraph } from "@/lib/metadata"
 
 import { Game } from "./game"
 
 export const metadata: Metadata = {
   title: "Daikanoid",
+  /**
+   * A deliberately unlinked easter egg: no nav entry, no in-content link, and
+   * an sr-only heading. Indexable-but-orphaned is the worst of both worlds --
+   * it can surface as a contextless search result. Still crawlable so the
+   * links on it are followed.
+   */
+  robots: {
+    index: false,
+    follow: true,
+  },
   alternates: {
     canonical: "/game",
   },
   openGraph: {
+    ...baseOpenGraph,
     url: "/game",
     type: "website",
     images: {

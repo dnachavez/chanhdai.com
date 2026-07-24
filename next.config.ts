@@ -29,6 +29,28 @@ const nextConfig: NextConfig = {
           },
         }
       : undefined,
+  /**
+   * Content-Security-Policy is deliberately absent. The root layout inlines two
+   * IIFEs (theme colour and avatar lights) that a `script-src 'self'` policy
+   * would break, so CSP needs nonces or hashes and a layout refactor first.
+   * These four are safe to ship as-is.
+   */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+    ]
+  },
   async redirects() {
     return [
       {
