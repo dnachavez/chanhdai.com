@@ -100,15 +100,16 @@ function getPageJsonLd(doc: Doc): WithContext<PageSchema> {
     "@id": absoluteUrl(postUrl),
     headline: doc.metadata.title,
     description: doc.metadata.description,
-    image:
+    // Both branches must be absolute; Schema.org drops relative image URLs.
+    image: absoluteUrl(
       doc.metadata.image ||
-      absoluteUrl(
         `/og/simple?title=${encodeURIComponent(doc.metadata.title)}&description=${encodeURIComponent(doc.metadata.description)}`
-      ),
+    ),
     url: absoluteUrl(postUrl),
     datePublished: new Date(doc.metadata.createdAt).toISOString(),
     dateModified: new Date(doc.metadata.updatedAt).toISOString(),
     author: { "@id": JSON_LD_ID.person },
+    publisher: { "@id": JSON_LD_ID.person },
     mainEntityOfPage: absoluteUrl(postUrl),
     isPartOf: {
       "@type": "Blog",

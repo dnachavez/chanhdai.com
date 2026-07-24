@@ -25,9 +25,13 @@ import {
 } from "@/features/portfolio/data/testimonials"
 
 const title = "Testimonials"
-const description = "Trusted by clients."
+const description =
+  "What clients and colleagues say about working with Dan Chavez on full stack, AI, and voice AI projects."
 
-const ogImage = `/og/simple?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+/** Short enough to stay legible on a 1200x630 card, unlike the meta description. */
+const tagline = "Trusted by clients."
+
+const ogImage = `/og/simple?title=${encodeURIComponent(title)}&description=${encodeURIComponent(tagline)}`
 
 export const metadata: Metadata = {
   title,

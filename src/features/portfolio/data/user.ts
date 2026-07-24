@@ -8,6 +8,9 @@ export const USER: User = {
   gender: "male",
   pronouns: "he/him",
   bio: "AI Engineer",
+  // Kept under ~155 characters so search engines show it without truncating.
+  metaDescription:
+    "Dan Chavez is a senior full stack and AI engineer in Cebu City, Philippines, building production AI systems, voice AI platforms, and scalable web apps.",
   flipSentences: [
     "AI Engineer",
     "Founding Engineer",

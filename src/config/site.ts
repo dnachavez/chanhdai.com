@@ -6,10 +6,9 @@ import { USER } from "@/features/portfolio/data/user"
 
 export const SITE_INFO = {
   name: USER.displayName,
-  url: process.env.NEXT_PUBLIC_APP_URL || "https://dnachavez.dev",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://www.dnachavez.dev",
   ogImage: USER.ogImage,
-  description: USER.bio,
-  keywords: USER.keywords,
+  description: USER.metaDescription,
 }
 
 export const LICENSE = {

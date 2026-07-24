@@ -45,7 +45,6 @@ export const metadata: Metadata = {
     default: `${USER.displayName} – ${USER.jobTitle}`,
   },
   description: SITE_INFO.description,
-  keywords: SITE_INFO.keywords,
   authors: [
     {
       name: "dnachavez",
