@@ -35,7 +35,7 @@ export function Projects() {
       </ul>
 
       {PROJECTS.length > MAX && (
-        <PanelViewAll href="/projects">All projects</PanelViewAll>
+        <PanelViewAll href="/projects">Show more</PanelViewAll>
       )}
     </Panel>
   )

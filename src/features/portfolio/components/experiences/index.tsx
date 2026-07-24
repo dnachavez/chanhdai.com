@@ -32,7 +32,7 @@ export function Experiences() {
       </div>
 
       {EXPERIENCES.length > MAX && (
-        <PanelViewAll href="/experience">Full experience</PanelViewAll>
+        <PanelViewAll href="/experience">Show more</PanelViewAll>
       )}
     </Panel>
   )
