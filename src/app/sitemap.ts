@@ -16,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   /**
    * The blog index genuinely changes when its newest post does, so that date is
-   * real. `/` and `/testimonials` have no content-derived timestamp, and a
+   * real. The other static routes have no content-derived timestamp, and a
    * build-time `new Date()` would just restamp them on every deploy — the
    * unreliable-lastmod pattern Google discounts. Omitting the field is valid
    * and more honest than inventing one.
@@ -33,6 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(latestPostUpdate).toISOString(),
       }),
     },
+    { url: `${SITE_INFO.url}/experience` },
+    { url: `${SITE_INFO.url}/projects` },
     { url: `${SITE_INFO.url}/testimonials` },
     ...posts,
   ]

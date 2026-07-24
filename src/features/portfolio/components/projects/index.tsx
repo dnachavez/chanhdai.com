@@ -1,4 +1,3 @@
-import { CollapsibleList } from "@/components/collapsible-list"
 import {
   Panel,
   PanelHeader,
@@ -6,11 +5,15 @@ import {
   PanelTitleSup,
 } from "@/features/portfolio/components/panel"
 import { PanelTitleCopy } from "@/features/portfolio/components/panel-title-copy"
+import { PanelViewAll } from "@/features/portfolio/components/panel-view-all"
 import { PROJECTS } from "@/features/portfolio/data/projects"
 
 import { ProjectItem } from "./project-item"
 
 const ID = "projects"
+
+/** How many projects the homepage shows before linking to the full list. */
+const MAX = 4
 
 export function Projects() {
   return (
@@ -23,11 +26,17 @@ export function Projects() {
         </PanelTitle>
       </PanelHeader>
 
-      <CollapsibleList
-        items={PROJECTS}
-        max={4}
-        renderItem={(item) => <ProjectItem project={item} />}
-      />
+      <ul>
+        {PROJECTS.slice(0, MAX).map((project) => (
+          <li key={project.id} className="border-b border-line">
+            <ProjectItem project={project} />
+          </li>
+        ))}
+      </ul>
+
+      {PROJECTS.length > MAX && (
+        <PanelViewAll href="/projects">All projects</PanelViewAll>
+      )}
     </Panel>
   )
 }
