@@ -45,6 +45,14 @@ export const metadata: Metadata = {
     default: `${USER.displayName} – ${USER.jobTitle}`,
   },
   description: SITE_INFO.description,
+  /**
+   * Verifies a Search Console URL-prefix property without touching DNS, which
+   * matters here: the zone lives on nameservers we can no longer edit. Emits
+   * nothing when the env var is unset.
+   */
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   authors: [
     {
       name: "dnachavez",
