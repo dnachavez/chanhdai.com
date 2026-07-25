@@ -11,6 +11,12 @@ export const SITE_INFO = {
   description: USER.metaDescription,
 }
 
+export const BLOG_INFO = {
+  title: "Blog",
+  description:
+    "Notes on full stack and AI engineering, and the occasional story from the road that got me here.",
+}
+
 export const LICENSE = {
   name: "MIT License",
   url: "https://github.com/dnachavez/dnachavez.dev/blob/main/LICENSE",

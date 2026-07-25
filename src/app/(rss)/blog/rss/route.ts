@@ -1,4 +1,4 @@
-import { SITE_INFO } from "@/config/site"
+import { BLOG_INFO, SITE_INFO } from "@/config/site"
 import { getBlogPosts } from "@/features/doc/data/documents"
 
 export const revalidate = false
@@ -33,7 +33,7 @@ export function GET() {
     <channel>
       <title>${escapeXml(`Blog | ${SITE_INFO.name}`)}</title>
       <link>${escapeXml(`${SITE_INFO.url}/blog`)}</link>
-      <description>Writing about code, design, and everything in between.</description>
+      <description>${escapeXml(BLOG_INFO.description)}</description>
       ${itemsXml}
     </channel>
   </rss>`

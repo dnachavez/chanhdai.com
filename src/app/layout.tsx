@@ -3,7 +3,7 @@ import "@/styles/globals.css"
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
-import type { WebSite, WithContext } from "schema-dts"
+import type { SearchAction, WebSite, WithContext } from "schema-dts"
 
 import { JSON_LD_ID, personJsonLd } from "@/config/json-ld"
 import { META_THEME_COLORS, SITE_INFO, X_HANDLE } from "@/config/site"
@@ -11,6 +11,24 @@ import { fontVariables } from "@/lib/fonts"
 import { JsonLdScript } from "@/lib/json-ld"
 import { Providers } from "@/components/providers"
 import { USER } from "@/features/portfolio/data/user"
+
+/**
+ * `/blog` filters its posts off a `q` param, which is the only search the site
+ * has. Declaring it is what lets the query box be offered against the site
+ * directly rather than leaving it reachable only by landing on the page first.
+ *
+ * `query-input` binds the template variable and is required for that, but it
+ * comes from the Actions spec rather than the core vocabulary, so schema-dts
+ * does not model it -- hence the cast instead of dropping the property.
+ */
+const searchAction = {
+  "@type": "SearchAction",
+  target: {
+    "@type": "EntryPoint",
+    urlTemplate: `${SITE_INFO.url}/blog?q={search_term_string}`,
+  },
+  "query-input": "required name=search_term_string",
+} as unknown as SearchAction
 
 function getWebSiteJsonLd(): WithContext<WebSite> {
   return {
@@ -20,6 +38,7 @@ function getWebSiteJsonLd(): WithContext<WebSite> {
     name: SITE_INFO.name,
     url: SITE_INFO.url,
     author: personJsonLd,
+    potentialAction: searchAction,
   }
 }
 

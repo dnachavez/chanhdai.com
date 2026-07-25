@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import type { Blog, WithContext } from "schema-dts"
 
 import { JSON_LD_ID } from "@/config/json-ld"
-import { X_HANDLE } from "@/config/site"
+import { BLOG_INFO, X_HANDLE } from "@/config/site"
 import { jsonLdBreadcrumbList, JsonLdScript } from "@/lib/json-ld"
 import { baseOpenGraph } from "@/lib/metadata"
 import { absoluteUrl } from "@/lib/utils"
@@ -17,8 +17,7 @@ import { PostListWithSearch } from "@/features/blog/components/post-list-with-se
 import { PostSearchInput } from "@/features/blog/components/post-search-input"
 import { getBlogPosts } from "@/features/doc/data/documents"
 
-const title = "Blog"
-const description = "Writing about code, design, and everything in between."
+const { title, description } = BLOG_INFO
 
 const ogImage = `/og/simple?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
 
@@ -90,10 +89,8 @@ export default function Page() {
 
       <div className="min-h-svh">
         <PageHeading>
-          <PageHeadingTagline>Blog</PageHeadingTagline>
-          <PageHeadingTitle>
-            Writing about code, design, and everything in between.
-          </PageHeadingTitle>
+          <PageHeadingTagline>{title}</PageHeadingTagline>
+          <PageHeadingTitle>{description}</PageHeadingTitle>
         </PageHeading>
 
         <div className="h-4" />
