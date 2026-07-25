@@ -6,7 +6,7 @@ import { baseOpenGraph } from "@/lib/metadata"
 import { cn } from "@/lib/utils"
 import {
   PageHeading,
-  PageHeadingTagline,
+  PageHeadingBackLink,
   PageHeadingTitle,
 } from "@/components/page-heading"
 import {
@@ -81,7 +81,7 @@ export default function TestimonialsPage() {
 
       <div className="min-h-svh">
         <PageHeading>
-          <PageHeadingTagline>Testimonials</PageHeadingTagline>
+          <PageHeadingBackLink href="/">Home</PageHeadingBackLink>
           <PageHeadingTitle>Trusted by clients</PageHeadingTitle>
         </PageHeading>
 
