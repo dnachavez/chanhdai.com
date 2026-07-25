@@ -6,7 +6,24 @@ import { UTM_PARAMS } from "@/config/site"
 import type { Experience } from "../../types/experiences"
 import { ExperiencePositionItem } from "./experience-position-item"
 
-export function ExperienceItem({ experience }: { experience: Experience }) {
+/**
+ * The homepage nests these under a `PanelTitle` h2, so h3/h4 is right there.
+ * `/experience` has no such section heading, so it shifts both up one level to
+ * keep the document outline contiguous from its h1.
+ */
+type HeadingLevel = "h2" | "h3"
+
+const POSITION_HEADING = { h2: "h3", h3: "h4" } as const
+
+export function ExperienceItem({
+  experience,
+  headingAs = "h3",
+}: {
+  experience: Experience
+  headingAs?: HeadingLevel
+}) {
+  const Heading = headingAs
+
   return (
     <div
       id={`experience-${experience.id}`}
@@ -33,7 +50,7 @@ export function ExperienceItem({ experience }: { experience: Experience }) {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-x-3 gap-y-1 pr-1 sm:flex-row sm:items-baseline sm:justify-between">
-          <h3 className="text-xl/6 font-medium">
+          <Heading className="text-xl/6 font-medium">
             {experience.companyWebsite ? (
               <a
                 className="link"
@@ -46,7 +63,7 @@ export function ExperienceItem({ experience }: { experience: Experience }) {
             ) : (
               experience.companyName
             )}
-          </h3>
+          </Heading>
 
           {experience.location && experience.locationType && (
             <dl className="flex min-w-0 items-center gap-1.5 text-sm whitespace-nowrap text-muted-foreground">
@@ -75,7 +92,11 @@ export function ExperienceItem({ experience }: { experience: Experience }) {
 
       <div className="relative space-y-4 before:absolute before:left-3 before:h-full before:w-px before:bg-border">
         {experience.positions.map((position) => (
-          <ExperiencePositionItem key={position.id} position={position} />
+          <ExperiencePositionItem
+            key={position.id}
+            position={position}
+            headingAs={POSITION_HEADING[headingAs]}
+          />
         ))}
       </div>
     </div>

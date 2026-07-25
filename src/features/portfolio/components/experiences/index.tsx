@@ -38,11 +38,21 @@ export function Experiences() {
   )
 }
 
-export function ExperienceList({ experiences }: { experiences: Experience[] }) {
+export function ExperienceList({
+  experiences,
+  headingAs,
+}: {
+  experiences: Experience[]
+  headingAs?: "h2" | "h3"
+}) {
   return (
     <>
       {experiences.map((experience) => (
-        <ExperienceItem key={experience.id} experience={experience} />
+        <ExperienceItem
+          key={experience.id}
+          experience={experience}
+          headingAs={headingAs}
+        />
       ))}
     </>
   )

@@ -98,7 +98,7 @@ export default function Page() {
         <ul className="screen-line-bottom">
           {PROJECTS.map((project) => (
             <li key={project.id} className="border-b border-line">
-              <ProjectItem project={project} />
+              <ProjectItem project={project} headingAs="h2" />
             </li>
           ))}
         </ul>
