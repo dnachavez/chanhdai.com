@@ -120,6 +120,16 @@ const nextConfig: NextConfig = {
             key: "Reporting-Endpoints",
             value: `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`,
           },
+          /**
+           * Vercel already sends `max-age=63072000`, but without the two
+           * directives the preload list requires. Every subdomain is served
+           * over https, and the apex sends this header on its redirect to
+           * `www`, so the domain is submittable at hstspreload.org.
+           */
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
