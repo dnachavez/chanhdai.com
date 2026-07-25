@@ -10,7 +10,13 @@ export type User = {
   gender: "male" | "female" | "non-binary"
   /** e.g. "he/him", "she/her", "they/them" */
   pronouns: string
+  /** Short role label shown in the UI under the display name */
   bio: string
+  /**
+   * Site-wide meta description. Kept separate from `bio` because search
+   * snippets and social cards need 150-160 characters, not a UI label.
+   */
+  metaDescription: string
   /** Short phrases rotated in UI (e.g., homepage flip effect) */
   flipSentences: string[]
   /** General location for display */
@@ -40,7 +46,11 @@ export type User = {
   ogImage: string
   /** Audio URL for name pronunciation */
   namePronunciationUrl: string
-  /** SEO keywords list for metadata */
+  /**
+   * Target terms kept for content planning. Deliberately NOT emitted as a
+   * `<meta name="keywords">` tag: Google has ignored that tag since 2009 and
+   * Bing treats a stuffed one as a spam signal.
+   */
   keywords: string[]
   /** Time zone in IANA format (e.g., "Asia/Ho_Chi_Minh") */
   timeZone: string

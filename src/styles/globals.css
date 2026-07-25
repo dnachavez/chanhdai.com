@@ -105,6 +105,33 @@
   @apply decoration-1 underline-offset-3 hover:underline;
 }
 
+/*
+ * Tech-stack badge. Extracted to a single utility because this class list was
+ * repeated on ~60 badges, adding ~18 KB of identical markup to the homepage
+ * (in the HTML and again in the RSC flight stream).
+ */
+@utility tech-badge {
+  @apply flex h-(--badge-height) items-center justify-center gap-1.25 rounded-full bg-zinc-50/80 px-2 font-mono text-xs text-foreground inset-ring-1 inset-ring-border dark:bg-zinc-900/80;
+  svg {
+    @apply pointer-events-none size-3.5 shrink-0 text-muted-foreground/80;
+  }
+}
+
+/*
+ * Skill/keyword tag. Same reasoning as tech-badge: the homepage renders ~140
+ * of these across Experience, Education and Projects, and the inlined class
+ * list was the single largest repeated string in the page payload.
+ */
+@utility tag-base {
+  @apply inline-flex items-center rounded-full border bg-zinc-50 px-1.5 py-0.5 font-mono text-xs text-muted-foreground dark:bg-zinc-900;
+  svg {
+    @apply shrink-0;
+  }
+  svg:not([class*="size-"]) {
+    @apply size-3.5;
+  }
+}
+
 @utility link-underline {
   @apply underline decoration-current/30 decoration-1 underline-offset-3 transition-colors hover:decoration-current;
 }

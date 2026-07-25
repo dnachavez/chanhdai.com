@@ -74,12 +74,18 @@ const DEFAULT_LABELS: Labels = {
   },
 }
 
+/**
+ * Level fills are applied from the calendar root via descendant selectors
+ * rather than as classes on each block. A year of contributions is ~365
+ * blocks, and repeating this class list on every one of them added roughly
+ * 87 KB of identical markup to the page for no benefit.
+ */
 const THEME = cn(
-  'data-[level="0"]:fill-muted-foreground/5',
-  'data-[level="1"]:fill-muted-foreground/20',
-  'data-[level="2"]:fill-muted-foreground/40',
-  'data-[level="3"]:fill-muted-foreground/60',
-  'data-[level="4"]:fill-muted-foreground/80'
+  '[&_rect[data-level="0"]]:fill-muted-foreground/5',
+  '[&_rect[data-level="1"]]:fill-muted-foreground/20',
+  '[&_rect[data-level="2"]]:fill-muted-foreground/40',
+  '[&_rect[data-level="3"]]:fill-muted-foreground/60',
+  '[&_rect[data-level="4"]]:fill-muted-foreground/80'
 )
 
 type ContributionGraphContextType = {
@@ -334,7 +340,7 @@ export const ContributionGraphBlock = ({
 
   return (
     <rect
-      className={cn(THEME, className)}
+      className={className}
       data-count={activity.count}
       data-date={activity.date}
       data-level={activity.level}
@@ -381,6 +387,7 @@ export const ContributionGraphCalendar = ({
     <div
       className={cn(
         "no-scrollbar max-w-full scroll-fade-x overflow-x-auto overflow-y-hidden",
+        THEME,
         className
       )}
       {...props}

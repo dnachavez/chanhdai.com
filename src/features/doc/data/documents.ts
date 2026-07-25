@@ -14,8 +14,23 @@ function parseFrontmatter(fileContent: string) {
   }
 }
 
-function getMDXFiles(dir: string) {
-  return fs.readdirSync(dir).filter((file) => path.extname(file) === ".mdx")
+/**
+ * Collects `.mdx` files under `dir`, recursing into nested folders. Returns
+ * paths relative to `dir` so callers can derive the topic folder from them.
+ */
+function getMDXFiles(dir: string): string[] {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      if (entry.isDirectory()) {
+        return getMDXFiles(path.join(dir, entry.name)).map((nested) =>
+          path.join(entry.name, nested)
+        )
+      }
+
+      return path.extname(entry.name) === ".mdx" ? [entry.name] : []
+    })
+    .sort()
 }
 
 function readMDXFile(filePath: string) {
@@ -29,28 +44,65 @@ function readMDXFile(filePath: string) {
  * yields docs with `category: "components"`), so category is derived from the
  * file location rather than declared in frontmatter. Files placed directly in
  * `dir` (e.g. shared `props.ts`) are ignored — only category folders are read.
+ *
+ * Folders nested inside a category are read too, and their name becomes the
+ * doc's `topic` (`content/blog/voice-ai/*.mdx` → category "blog", topic
+ * "voice-ai"). This lets topic clusters be organised on disk without changing
+ * the category or the URL, which stays `/blog/[slug]`.
  */
 function getMDXData(dir: string) {
   const categoryDirs = fs
     .readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
 
-  return categoryDirs.flatMap((categoryDir) => {
+  const docs = categoryDirs.flatMap((categoryDir) => {
     const category = categoryDir.name
     const categoryPath = path.join(dir, category)
 
-    return getMDXFiles(categoryPath).map<Doc>((file) => {
-      const { metadata, content } = readMDXFile(path.join(categoryPath, file))
+    return getMDXFiles(categoryPath).map<Doc>((relativePath) => {
+      const { metadata, content } = readMDXFile(
+        path.join(categoryPath, relativePath)
+      )
 
-      const slug = path.basename(file, path.extname(file))
+      const slug = path.basename(relativePath, path.extname(relativePath))
+      const topicDir = path.dirname(relativePath)
+      const topic = topicDir === "." ? undefined : topicDir.split(path.sep)[0]
 
       return {
-        metadata: { ...metadata, category },
+        metadata: { ...metadata, category, topic },
         slug,
         content,
       }
     })
   })
+
+  assertUniqueSlugs(docs)
+
+  return docs
+}
+
+/**
+ * Slugs are the whole URL (`/blog/[slug]`), so two files with the same basename
+ * in different topic folders would collide and one would become unreachable.
+ * Fail the build loudly rather than silently serving whichever was read first.
+ */
+function assertUniqueSlugs(docs: Doc[]) {
+  const seen = new Map<string, string>()
+
+  for (const doc of docs) {
+    const location = [doc.metadata.category, doc.metadata.topic, doc.slug]
+      .filter(Boolean)
+      .join("/")
+    const previous = seen.get(doc.slug)
+
+    if (previous) {
+      throw new Error(
+        `Duplicate doc slug "${doc.slug}": "${previous}" and "${location}" would both resolve to the same URL. Rename one of the files.`
+      )
+    }
+
+    seen.set(doc.slug, location)
+  }
 }
 
 export const getAllDocs = cache(() => {

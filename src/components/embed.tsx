@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 import { cn } from "@/lib/utils"
 
 import { ImageZoom } from "./kibo-ui/image-zoom"
@@ -41,14 +43,49 @@ export function IframeEmbed({
   )
 }
 
+/**
+ * A framed, zoomable image at full content width.
+ *
+ * `width`/`height` are the source image's intrinsic dimensions. They set the
+ * aspect ratio so the browser reserves space before the file arrives, and they
+ * drive the generated srcset — pass the real numbers, not a guess.
+ *
+ * NOTE: the MDX pipeline only forwards string-literal attributes, so callers in
+ * `.mdx` must write `width="1400"` and `priority="true"` rather than the JSX
+ * expression form `width={1400}` / bare `priority`. Expression-valued
+ * attributes are silently dropped before the component ever sees them, which is
+ * why `priority` is coerced from a string below.
+ */
 export function FramedImage({
   canZoom = true,
+  alt,
+  priority,
+  width,
+  height,
+  className,
   ...props
-}: React.ComponentProps<"img"> & {
+}: Omit<
+  React.ComponentProps<typeof Image>,
+  "alt" | "width" | "height" | "priority"
+> & {
   canZoom?: boolean
+  /** Required: every image in a post carries real descriptive alt text. */
+  alt: string
+  width: number | `${number}`
+  height: number | `${number}`
+  priority?: boolean | "true" | "false"
 }) {
-  // eslint-disable-next-line jsx-a11y/alt-text
-  const image = <img {...props} />
+  const image = (
+    <Image
+      alt={alt}
+      width={width}
+      height={height}
+      priority={priority === true || priority === "true"}
+      className={cn("h-auto w-full", className)}
+      sizes="(min-width: 1024px) 768px, 100vw"
+      {...props}
+    />
+  )
 
   return (
     <figure className="relative [&_img]:rounded-xl">
@@ -91,10 +128,18 @@ export function Photo({
     <figure className={cn("m-0 flex flex-col gap-2", className)}>
       <div className="relative [&_img]:rounded-xl">
         <ImageZoom>
-          {}
-          <img
+          <Image
             src={src}
             alt={alt ?? caption ?? ""}
+            /**
+             * Nominal 4:3 box, not the source dimensions. Sources vary between
+             * portrait and landscape; `object-cover` crops them all to the same
+             * ratio, so these describe the rendered box and keep the generated
+             * srcset aligned with the size actually displayed.
+             */
+            width={1200}
+            height={900}
+            sizes="(min-width: 1024px) 260px, (min-width: 640px) 33vw, 50vw"
             className="aspect-[4/3] w-full object-cover"
           />
         </ImageZoom>

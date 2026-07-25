@@ -1,4 +1,5 @@
 import { addQueryParams } from "@/utils/url"
+import { IdCardIcon } from "lucide-react"
 
 import { UTM_PARAMS } from "@/config/site"
 import { Button } from "@/components/base/ui/button"
@@ -47,6 +48,30 @@ export function SocialLinks() {
               </Tooltip>
             </li>
           ))}
+
+          {/* The /vcard route already builds a real contact card from USER; it
+              just had nothing pointing at it. */}
+          <li>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    className="text-foreground/80 shadow-none [&_svg:not([class*='size-'])]:size-4.5"
+                    variant="outline"
+                    size="icon-sm"
+                    nativeButton={false}
+                    render={
+                      <a href="/vcard" download>
+                        <IdCardIcon />
+                        <span className="sr-only">Save contact</span>
+                      </a>
+                    }
+                  />
+                }
+              />
+              <TooltipContent>Save contact (.vcf)</TooltipContent>
+            </Tooltip>
+          </li>
         </ul>
       </PanelContent>
     </Panel>

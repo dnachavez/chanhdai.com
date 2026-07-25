@@ -5,6 +5,7 @@ import type { Blog, WithContext } from "schema-dts"
 import { JSON_LD_ID } from "@/config/json-ld"
 import { X_HANDLE } from "@/config/site"
 import { jsonLdBreadcrumbList, JsonLdScript } from "@/lib/json-ld"
+import { baseOpenGraph } from "@/lib/metadata"
 import { absoluteUrl } from "@/lib/utils"
 import {
   PageHeading,
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     canonical: "/blog",
   },
   openGraph: {
+    ...baseOpenGraph,
     url: "/blog",
     type: "website",
     images: {

@@ -13,6 +13,13 @@ export type DocMetadata = {
    */
   category?: string
   /**
+   * Topic cluster, derived from an optional folder nested inside the category
+   * (e.g. `content/blog/voice-ai/*` → "voice-ai"). Undefined for docs sitting
+   * directly in the category folder. Does not affect the URL — routes are
+   * `/blog/[slug]` regardless of nesting.
+   */
+  topic?: string
+  /**
    * Flag to show a "New" badge/highlight in the UI.
    */
   new?: boolean

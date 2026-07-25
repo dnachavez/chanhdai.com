@@ -8,6 +8,7 @@ import type { BlogPosting as PageSchema, WithContext } from "schema-dts"
 import { JSON_LD_ID } from "@/config/json-ld"
 import { X_HANDLE } from "@/config/site"
 import { jsonLdBreadcrumbList, JsonLdScript } from "@/lib/json-ld"
+import { baseOpenGraph } from "@/lib/metadata"
 import { absoluteUrl } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
@@ -20,6 +21,7 @@ import {
 import { MDX } from "@/components/mdx"
 import { TOCInline } from "@/components/toc-inline"
 import { TOCMinimap } from "@/components/toc-minimap"
+import { DocByline } from "@/features/doc/components/doc-byline"
 import { DocKeyboardShortcuts } from "@/features/doc/components/doc-keyboard-shortcuts"
 import {
   DocContainer,
@@ -36,6 +38,7 @@ import {
   getBlogPosts,
   getDocBySlug,
 } from "@/features/doc/data/documents"
+import { getReadingTimeMinutes } from "@/features/doc/lib/reading-time"
 import type { Doc } from "@/features/doc/types/document"
 
 export const revalidate = false
@@ -71,6 +74,7 @@ export async function generateMetadata({
       canonical: postUrl,
     },
     openGraph: {
+      ...baseOpenGraph,
       url: postUrl,
       type: "article",
       publishedTime: new Date(createdAt).toISOString(),
@@ -100,15 +104,16 @@ function getPageJsonLd(doc: Doc): WithContext<PageSchema> {
     "@id": absoluteUrl(postUrl),
     headline: doc.metadata.title,
     description: doc.metadata.description,
-    image:
+    // Both branches must be absolute; Schema.org drops relative image URLs.
+    image: absoluteUrl(
       doc.metadata.image ||
-      absoluteUrl(
         `/og/simple?title=${encodeURIComponent(doc.metadata.title)}&description=${encodeURIComponent(doc.metadata.description)}`
-      ),
+    ),
     url: absoluteUrl(postUrl),
     datePublished: new Date(doc.metadata.createdAt).toISOString(),
     dateModified: new Date(doc.metadata.updatedAt).toISOString(),
     author: { "@id": JSON_LD_ID.person },
+    publisher: { "@id": JSON_LD_ID.person },
     mainEntityOfPage: absoluteUrl(postUrl),
     isPartOf: {
       "@type": "Blog",
@@ -257,6 +262,12 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
           >
             {doc.metadata.title}
           </h1>
+
+          <DocByline
+            createdAt={doc.metadata.createdAt}
+            updatedAt={doc.metadata.updatedAt}
+            readingTimeMinutes={getReadingTimeMinutes(doc.content)}
+          />
         </DocContainer>
 
         <DocGrid>

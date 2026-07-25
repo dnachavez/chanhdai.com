@@ -1,13 +1,10 @@
 "use client"
 
 import { useRef } from "react"
-import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
 import { useInView, usePageInView } from "motion/react"
 
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { Button } from "@/components/base/ui/button"
 import type { MarqueeContentProps } from "@/components/kibo-ui/marquee"
 import {
   Marquee,
@@ -34,6 +31,7 @@ import {
 import type { Testimonial as TestimonialType } from "@/features/portfolio/types/testimonials"
 
 import { Panel, PanelContent, PanelHeader, PanelTitle } from "./panel"
+import { PanelViewAll } from "./panel-view-all"
 
 const ID = "testimonials"
 
@@ -104,18 +102,7 @@ export function Testimonials() {
         )}
       </PanelContent>
 
-      <div className="screen-line-top flex justify-center py-2">
-        <Button
-          className="gap-2 pr-2.5 pl-3"
-          variant="secondary"
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/testimonials" />}
-        >
-          All builders
-          <ArrowRightIcon />
-        </Button>
-      </div>
+      <PanelViewAll href="/testimonials">Show more</PanelViewAll>
     </Panel>
   )
 }

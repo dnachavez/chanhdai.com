@@ -28,9 +28,8 @@ export function PostItem({
             alt={post.metadata.title}
             width={1200}
             height={630}
-            quality={100}
+            sizes="(min-width: 768px) 384px, 100vw"
             loading={imageLoading}
-            unoptimized
           />
           <div className="pointer-events-none absolute inset-0 rounded-(--image-radius) inset-ring-1 inset-ring-black/15 dark:inset-ring-white/15" />
         </div>

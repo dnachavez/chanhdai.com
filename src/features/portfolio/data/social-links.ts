@@ -31,8 +31,8 @@ export const SOCIAL = {
   },
   instagram: {
     title: "Instagram",
-    handle: "@dnachavez.dev",
-    href: "https://instagram.com/dnachavez.dev",
+    handle: "@dnachavez",
+    href: "https://instagram.com/dnachavez",
     sameAs: true,
   },
   tiktok: {

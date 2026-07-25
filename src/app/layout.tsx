@@ -45,7 +45,14 @@ export const metadata: Metadata = {
     default: `${USER.displayName} – ${USER.jobTitle}`,
   },
   description: SITE_INFO.description,
-  keywords: SITE_INFO.keywords,
+  /**
+   * Verifies a Search Console URL-prefix property without touching DNS, which
+   * matters here: the zone lives on nameservers we can no longer edit. Emits
+   * nothing when the env var is unset.
+   */
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   authors: [
     {
       name: "dnachavez",
@@ -139,6 +146,19 @@ export default function RootLayout({
             `,
           }}
         />
+        {/*
+          Declared here rather than via `metadata.alternates.types` because
+          every page sets its own `alternates.canonical`, and Next.js replaces
+          the parent `alternates` object wholesale instead of merging it — the
+          feed link would survive only on pages that set no canonical.
+         */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${SITE_INFO.name} — Blog`}
+          href="/blog/rss"
+        />
+
         <JsonLdScript data={getWebSiteJsonLd()} />
       </head>
 
