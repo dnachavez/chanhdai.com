@@ -26,10 +26,11 @@ export function DocShareMenu({ title, url }: { title: string; url: string }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="size-8 border-none active:scale-none"
+          className="relative size-8 touch-manipulation border-none active:scale-none"
           variant="secondary"
           size="icon-sm"
         >
+          <span className="absolute size-12 pointer-fine:hidden" aria-hidden />
           <ShareIcon />
         </Button>
       </DropdownMenuTrigger>
