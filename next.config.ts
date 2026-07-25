@@ -30,10 +30,8 @@ const nextConfig: NextConfig = {
         }
       : undefined,
   /**
-   * Content-Security-Policy is deliberately absent. The root layout inlines two
-   * IIFEs (theme colour and avatar lights) that a `script-src 'self'` policy
-   * would break, so CSP needs nonces or hashes and a layout refactor first.
-   * These four are safe to ship as-is.
+   * Content-Security-Policy is set per-request in `src/middleware.ts`, since it
+   * carries a nonce. These four are static and stay here.
    */
   async headers() {
     return [
