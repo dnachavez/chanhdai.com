@@ -494,7 +494,7 @@ export const ContributionGraphLegend = ({
 
   return (
     <div
-      className={cn("ml-auto flex items-center", className)}
+      className={cn("ml-auto flex items-center", THEME, className)}
       style={{ gap: blockMargin }}
       {...props}
     >
@@ -509,7 +509,6 @@ export const ContributionGraphLegend = ({
           <svg height={blockSize} key={level} width={blockSize}>
             <title>{`${level} contributions`}</title>
             <rect
-              className={cn(THEME)}
               data-level={level}
               height={blockSize}
               rx={blockRadius}
