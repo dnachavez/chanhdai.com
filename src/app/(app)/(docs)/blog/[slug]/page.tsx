@@ -41,12 +41,10 @@ import {
 import { getReadingTimeMinutes } from "@/features/doc/lib/reading-time"
 import type { Doc } from "@/features/doc/types/document"
 
-/**
- * `dynamic = "force-static"` and `dynamicParams = false` were removed when the
- * root layout began reading the CSP nonce from request headers: a page cannot
- * be forced static under a layout that reads them. `generateStaticParams` stays
- * so the slug set is still enumerated at build time.
- */
+export const revalidate = false
+export const dynamic = "force-static"
+export const dynamicParams = false
+
 export async function generateStaticParams() {
   const docs = getBlogPosts()
   return docs.map((doc) => ({ slug: doc.slug }))

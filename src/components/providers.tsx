@@ -7,15 +7,11 @@ import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider as BaseTooltipProvider } from "@/components/base/ui/tooltip"
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts"
-import { useNonce } from "@/components/nonce-provider"
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const nonce = useNonce()
-
   return (
     <JotaiProvider>
       <ThemeProvider
-        nonce={nonce}
         enableSystem
         disableTransitionOnChange
         enableColorScheme
