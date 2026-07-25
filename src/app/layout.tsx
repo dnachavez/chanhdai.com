@@ -130,9 +130,19 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
+        {/*
+          `suppressHydrationWarning` covers the nonce, not the body. Once a page
+          loads under a CSP carrying nonce sources, the browser blanks every
+          `nonce` content attribute and keeps the value in an internal slot
+          reachable only via the `.nonce` property, so that a selector like
+          `script[nonce^="a"]` cannot leak it. React's hydration check reads the
+          attribute, finds an empty string and reports a mismatch against what it
+          rendered. Nothing is wrong: the script already ran under its nonce.
+         */}
         <script
           nonce={nonce}
           type="text/javascript"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: darkModeScript }}
         />
         {/*
@@ -146,6 +156,7 @@ export default async function RootLayout({
         <script
           nonce={nonce}
           type="text/javascript"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {

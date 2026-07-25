@@ -1,47 +1,24 @@
-import posthog from "posthog-js"
-import { z } from "zod"
+import type { Event } from "./events-schema"
 
-import { op } from "./openpanel"
+export type { Event } from "./events-schema"
 
-const eventSchema = z.object({
-  name: z.enum([
-    "copy_npm_command",
-    "copy_code_block",
-    "copy_block_code",
-    "copy_email",
-    "copy_phone_number",
-    "play_name_pronunciation",
-    "open_command_menu",
-    "command_menu_search",
-    "command_menu_action",
-    "blog_search",
-    "toc_inline_toggle",
-    "toc_inline_item_click",
-    "toc_minimap_hover",
-    "toc_minimap_item_click",
-    "keyboard_shortcut_navigate",
-    "block_viewer_tab_change",
-    "block_viewer_resize",
-    "block_viewer_open_preview",
-    "block_viewer_refresh_preview",
-    "block_viewer_theme_change",
-  ]),
-  // declare type AllowedPropertyValues = string | number | boolean | null
-  properties: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null()])
-    )
-    .optional(),
-})
+/**
+ * Every import here is deferred. `trackEvent` is reachable from the copy
+ * buttons, the command menu and the overview items, so a static import would
+ * pull posthog-js, @openpanel/web and zod into the first chunk of any page
+ * rendering one of them -- roughly 250 KB evaluated during hydration to
+ * support something that only runs on a click.
+ */
+export async function trackEvent(input: Event) {
+  const [{ eventSchema }, { getOpenPanel }, { default: posthog }] =
+    await Promise.all([
+      import("./events-schema"),
+      import("./openpanel"),
+      import("posthog-js"),
+    ])
 
-export type Event = z.infer<typeof eventSchema>
-
-export function trackEvent(input: Event) {
   const event = eventSchema.parse(input)
-  if (event) {
-    console.log("trackEvent:", event)
-    posthog.capture(event.name, event.properties)
-    op.track(event.name, event.properties)
-  }
+
+  posthog.capture(event.name, event.properties)
+  getOpenPanel()?.track(event.name, event.properties)
 }

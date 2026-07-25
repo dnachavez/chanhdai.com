@@ -48,7 +48,6 @@
     "**/mdx-components.*": "${dirname}/mdx-components.${extname}",
     "**/not-found.*": "${dirname}/not-found.${extname}",
     "**/proxy.*": "${dirname}/proxy.${extname}",
-    "**/middleware.*": "${dirname}/middleware.${extname}",
     "**/route.*": "${dirname}/route.${extname}",
     "**/template.*": "${dirname}/template.${extname}",
     "**/unauthorized.*": "${dirname}/unauthorized.${extname}",
