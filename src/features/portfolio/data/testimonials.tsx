@@ -25,7 +25,7 @@ export const TESTIMONIALS_1: Testimonial[] = [
     authorAvatar: "/images/testimonials/louis-evans.webp",
     authorName: "Louis Evans",
     authorTagline: "Co-Founder & CTO · Aeva",
-    url: "https://aeva.com",
+    url: "https://www.aevaai.com",
     quote:
       "We've been really happy with your performance at the company and would love to keep you on board for the long term.",
     date: "2026-06-21",

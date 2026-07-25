@@ -52,7 +52,7 @@ export function GearItem({
         </div>
 
         {isLink && (
-          <ArrowUpRightIcon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover/gear:text-foreground" />
+          <ArrowUpRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
         )}
       </div>
     </Comp>
