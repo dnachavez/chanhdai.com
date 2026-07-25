@@ -15,7 +15,6 @@ export const TESTIMONIALS_1: Testimonial[] = [
     authorAvatar: "https://unavatar.io/upwork.com",
     authorName: "Papu Borah",
     authorTagline: "Client · Upwork",
-    // TODO: replace with the actual Upwork profile URL
     url: "https://www.upwork.com",
     quote:
       "great service delivered as promised, Highliy recommend. Professional work done by him",
