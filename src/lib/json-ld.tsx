@@ -34,6 +34,11 @@ export async function JsonLdScript({ data }: { data: unknown }) {
     <script
       nonce={nonce}
       type="application/ld+json"
+      // Browsers blank the `nonce` attribute after load, which React's
+      // hydration check reads as a mismatch. See the note in `app/layout.tsx`.
+      // Safe on the payload too: this is a server component, so the markup and
+      // the flight payload React compares it against come from the same render.
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{
         __html: JSON.stringify(data).replace(/</g, "\\u003c"),
       }}
