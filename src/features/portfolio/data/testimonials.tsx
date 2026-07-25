@@ -19,7 +19,6 @@ export const TESTIMONIALS_1: Testimonial[] = [
     quote:
       "great service delivered as promised, Highliy recommend. Professional work done by him",
     date: "2024-01-23",
-    isVerified: true,
   },
   {
     authorAvatar: "/images/testimonials/louis-evans.webp",

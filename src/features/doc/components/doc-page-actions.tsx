@@ -188,7 +188,7 @@ export function ViewOptions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="size-7 border-none active:scale-none"
+          className="size-8 border-none active:scale-none"
           variant="secondary"
           size="icon-sm"
           aria-label="View Options"

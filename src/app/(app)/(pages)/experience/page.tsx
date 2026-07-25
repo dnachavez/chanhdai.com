@@ -61,6 +61,20 @@ function toIsoDate(period: string | undefined) {
 }
 
 /**
+ * Position descriptions are authored as Markdown bullet lists with inline
+ * links. Structured data takes prose, so the markers and URLs come off and the
+ * bullets -- each already a full sentence -- join into a paragraph.
+ */
+function toPlainText(markdown: string) {
+  return markdown
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .split("\n")
+    .map((line) => line.replace(/^\s*[-*]\s+/, "").trim())
+    .filter(Boolean)
+    .join(" ")
+}
+
+/**
  * An ItemList of the roles rather than a list of Organizations: the page is a
  * chronology of positions, and each entry points at the employer while staying
  * attached to the site's single Person entity.
@@ -88,6 +102,9 @@ function getExperienceJsonLd(): WithContext<ItemList> {
       item: {
         "@type": "EmployeeRole" as const,
         roleName: position.title,
+        ...(position.description && {
+          description: toPlainText(position.description),
+        }),
         ...(toIsoDate(position.employmentPeriod.start) && {
           startDate: toIsoDate(position.employmentPeriod.start),
         }),

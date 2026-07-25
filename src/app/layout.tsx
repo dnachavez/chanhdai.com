@@ -3,16 +3,32 @@ import "@/styles/globals.css"
 import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
-import type { WebSite, WithContext } from "schema-dts"
+import type { SearchAction, WebSite, WithContext } from "schema-dts"
 
 import { JSON_LD_ID, personJsonLd } from "@/config/json-ld"
 import { META_THEME_COLORS, SITE_INFO, X_HANDLE } from "@/config/site"
 import { fontVariables } from "@/lib/fonts"
 import { JsonLdScript } from "@/lib/json-ld"
-import { getNonce } from "@/lib/nonce"
-import { NonceProvider } from "@/components/nonce-provider"
 import { Providers } from "@/components/providers"
 import { USER } from "@/features/portfolio/data/user"
+
+/**
+ * `/blog` filters its posts off a `q` param, which is the only search the site
+ * has. Declaring it is what lets the query box be offered against the site
+ * directly rather than leaving it reachable only by landing on the page first.
+ *
+ * `query-input` binds the template variable and is required for that, but it
+ * comes from the Actions spec rather than the core vocabulary, so schema-dts
+ * does not model it -- hence the cast instead of dropping the property.
+ */
+const searchAction = {
+  "@type": "SearchAction",
+  target: {
+    "@type": "EntryPoint",
+    urlTemplate: `${SITE_INFO.url}/blog?q={search_term_string}`,
+  },
+  "query-input": "required name=search_term_string",
+} as unknown as SearchAction
 
 function getWebSiteJsonLd(): WithContext<WebSite> {
   return {
@@ -21,7 +37,9 @@ function getWebSiteJsonLd(): WithContext<WebSite> {
     "@id": JSON_LD_ID.website,
     name: SITE_INFO.name,
     url: SITE_INFO.url,
+    inLanguage: "en-US",
     author: personJsonLd,
+    potentialAction: searchAction,
   }
 }
 
@@ -120,43 +138,25 @@ export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const nonce = await getNonce()
-
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
-        {/*
-          `suppressHydrationWarning` covers the nonce, not the body. Once a page
-          loads under a CSP carrying nonce sources, the browser blanks every
-          `nonce` content attribute and keeps the value in an internal slot
-          reachable only via the `.nonce` property, so that a selector like
-          `script[nonce^="a"]` cannot leak it. React's hydration check reads the
-          attribute, finds an empty string and reports a mismatch against what it
-          rendered. Nothing is wrong: the script already ran under its nonce.
-         */}
         <script
-          nonce={nonce}
           type="text/javascript"
-          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: darkModeScript }}
         />
         {/*
           Thanks @tailwindcss. We inject the script via the `<Script/>` tag again,
           since we found the regular `<script>` tag to not execute when rendering a not-found page.
          */}
-        <Script
-          nonce={nonce}
-          src={`data:text/javascript;base64,${btoa(darkModeScript)}`}
-        />
+        <Script src={`data:text/javascript;base64,${btoa(darkModeScript)}`} />
         <script
-          nonce={nonce}
           type="text/javascript"
-          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -183,11 +183,9 @@ export default async function RootLayout({
       </head>
 
       <body>
-        <NonceProvider nonce={nonce}>
-          <Providers>
-            <NuqsAdapter>{children}</NuqsAdapter>
-          </Providers>
-        </NonceProvider>
+        <Providers>
+          <NuqsAdapter>{children}</NuqsAdapter>
+        </Providers>
       </body>
     </html>
   )

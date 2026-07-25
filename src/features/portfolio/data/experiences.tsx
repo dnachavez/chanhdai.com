@@ -25,7 +25,7 @@ export const EXPERIENCES: Experience[] = [
     positions: [
       {
         id: "1",
-        title: "Senior Full-stack Developer",
+        title: "Senior Full Stack Developer",
         employmentPeriod: {
           start: "02.2026",
         },
@@ -126,7 +126,7 @@ export const EXPERIENCES: Experience[] = [
     positions: [
       {
         id: "1",
-        title: "Full-stack Engineer & AI Engineer",
+        title: "Full Stack Engineer & AI Engineer",
         employmentPeriod: {
           start: "08.2024",
           end: "03.2025",
@@ -167,7 +167,7 @@ export const EXPERIENCES: Experience[] = [
     positions: [
       {
         id: "1",
-        title: "Lead Full-stack Developer",
+        title: "Lead Full Stack Developer",
         employmentPeriod: {
           start: "04.2024",
           end: "12.2025",
@@ -245,7 +245,7 @@ export const EXPERIENCES: Experience[] = [
     positions: [
       {
         id: "1",
-        title: "Full-stack Developer",
+        title: "Full Stack Developer",
         employmentPeriod: {
           start: "07.2023",
           end: "07.2026",
