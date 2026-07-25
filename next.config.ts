@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
         }
       : undefined,
   /**
-   * Content-Security-Policy is set per-request in `src/middleware.ts`, since it
+   * Content-Security-Policy is set per-request in `src/proxy.ts`, since it
    * carries a nonce. These four are static and stay here.
    */
   async headers() {
