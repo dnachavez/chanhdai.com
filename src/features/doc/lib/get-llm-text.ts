@@ -4,9 +4,14 @@ import { remark } from "remark"
 import remarkGfm from "remark-gfm"
 import remarkMdx from "remark-mdx"
 
+import { remarkEmbedsToMarkdown } from "@/features/doc/lib/remark-embeds-to-markdown"
 import type { Doc } from "@/features/doc/types/document"
 
-const processor = remark().use(remarkMdx).use(remarkGfm).use(remarkHeading)
+const processor = remark()
+  .use(remarkMdx)
+  .use(remarkGfm)
+  .use(remarkHeading)
+  .use(remarkEmbedsToMarkdown)
 
 export async function getLLMText(doc: Doc) {
   const processed = await processor.process({

@@ -11,11 +11,12 @@ import {
 import { Panel, PanelContent } from "@/features/portfolio/components/panel"
 import { SOCIAL_ICONS } from "@/features/portfolio/components/social-link-icons"
 import { SOCIAL_LINKS } from "@/features/portfolio/data/social-links"
+import { USER } from "@/features/portfolio/data/user"
 
 export function SocialLinks() {
   return (
     <Panel>
-      <h2 className="sr-only">Social Links</h2>
+      <h2 className="sr-only">Where can you find {USER.displayName} online?</h2>
 
       <PanelContent>
         <ul className="flex flex-wrap gap-2">

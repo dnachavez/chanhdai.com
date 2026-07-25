@@ -12,7 +12,7 @@ export const TESTIMONIALS_1: Testimonial[] = [
     date: "2024-02-21",
   },
   {
-    authorAvatar: "https://unavatar.io/upwork.com",
+    authorAvatar: "/images/testimonials/papu-borah.png",
     authorName: "Papu Borah",
     authorTagline: "Client · Upwork",
     url: "https://www.upwork.com",

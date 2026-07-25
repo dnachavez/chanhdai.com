@@ -22,13 +22,21 @@ import { Markdown } from "@/components/markdown"
 
 import type { Project } from "../../types/projects"
 
+/**
+ * h3 suits the homepage, where a `PanelTitle` h2 sits above the list.
+ * `/projects` has no such section heading, so it shifts up to h2 to keep the
+ * document outline contiguous from its h1.
+ */
 export function ProjectItem({
   className,
   project,
+  headingAs = "h3",
 }: {
   className?: string
   project: Project
+  headingAs?: "h2" | "h3"
 }) {
+  const Heading = headingAs
   const { start, end } = project.period
   const isOngoing = !end
   const isSinglePeriod = end === start
@@ -56,9 +64,9 @@ export function ProjectItem({
         <div className="flex-1 border-l border-dashed border-line">
           <CollapsibleTrigger className="flex w-full items-center gap-2 p-4 pr-2 text-left">
             <div className="flex-1">
-              <h3 className="mb-1 leading-snug font-medium text-balance">
+              <Heading className="mb-1 leading-snug font-medium text-balance">
                 {project.title}
-              </h3>
+              </Heading>
 
               <dl className="text-sm text-muted-foreground">
                 <dt className="sr-only">Period</dt>

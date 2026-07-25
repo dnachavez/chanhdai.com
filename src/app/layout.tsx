@@ -9,6 +9,8 @@ import { JSON_LD_ID, personJsonLd } from "@/config/json-ld"
 import { META_THEME_COLORS, SITE_INFO, X_HANDLE } from "@/config/site"
 import { fontVariables } from "@/lib/fonts"
 import { JsonLdScript } from "@/lib/json-ld"
+import { getNonce } from "@/lib/nonce"
+import { NonceProvider } from "@/components/nonce-provider"
 import { Providers } from "@/components/providers"
 import { USER } from "@/features/portfolio/data/user"
 
@@ -118,15 +120,18 @@ export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const nonce = await getNonce()
+
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           type="text/javascript"
           dangerouslySetInnerHTML={{ __html: darkModeScript }}
         />
@@ -134,8 +139,12 @@ export default function RootLayout({
           Thanks @tailwindcss. We inject the script via the `<Script/>` tag again,
           since we found the regular `<script>` tag to not execute when rendering a not-found page.
          */}
-        <Script src={`data:text/javascript;base64,${btoa(darkModeScript)}`} />
+        <Script
+          nonce={nonce}
+          src={`data:text/javascript;base64,${btoa(darkModeScript)}`}
+        />
         <script
+          nonce={nonce}
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
@@ -163,9 +172,11 @@ export default function RootLayout({
       </head>
 
       <body>
-        <Providers>
-          <NuqsAdapter>{children}</NuqsAdapter>
-        </Providers>
+        <NonceProvider nonce={nonce}>
+          <Providers>
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </Providers>
+        </NonceProvider>
       </body>
     </html>
   )

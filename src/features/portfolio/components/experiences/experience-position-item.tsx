@@ -18,9 +18,12 @@ import type { ExperiencePosition } from "@/features/portfolio/types/experiences"
 
 export function ExperiencePositionItem({
   position,
+  headingAs = "h4",
 }: {
   position: ExperiencePosition
+  headingAs?: "h3" | "h4"
 }) {
+  const Heading = headingAs
   const { start, end } = position.employmentPeriod
   const isOngoing = !end
   const duration = formatDuration(start, end)
@@ -55,7 +58,9 @@ export function ExperiencePositionItem({
             {position.icon ?? <BriefcaseBusinessIcon />}
           </div>
 
-          <h4 className="flex-1 font-medium text-balance">{position.title}</h4>
+          <Heading className="flex-1 font-medium text-balance">
+            {position.title}
+          </Heading>
 
           <div className="shrink-0 text-muted-foreground group-data-disabled:hidden [&_svg]:h-lh [&_svg]:w-4">
             <CollapsibleChevronsUpDownIcon duration={0.15} />

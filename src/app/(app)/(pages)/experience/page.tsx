@@ -131,7 +131,7 @@ export default function Page() {
         </PageHeading>
 
         <div className="screen-line-bottom pr-2 pl-4">
-          <ExperienceList experiences={EXPERIENCES} />
+          <ExperienceList experiences={EXPERIENCES} headingAs="h2" />
         </div>
 
         <div className="h-4" />
