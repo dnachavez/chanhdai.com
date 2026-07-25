@@ -37,6 +37,7 @@ function getWebSiteJsonLd(): WithContext<WebSite> {
     "@id": JSON_LD_ID.website,
     name: SITE_INFO.name,
     url: SITE_INFO.url,
+    inLanguage: "en-US",
     author: personJsonLd,
     potentialAction: searchAction,
   }

@@ -195,7 +195,7 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                   <TooltipTrigger
                     render={
                       <Button
-                        className="size-7 border-none"
+                        className="size-8 border-none"
                         variant="secondary"
                         size="icon-sm"
                         asChild
@@ -225,7 +225,7 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                   <TooltipTrigger
                     render={
                       <Button
-                        className="size-7 border-none"
+                        className="size-8 border-none"
                         variant="secondary"
                         size="icon-sm"
                         asChild

@@ -46,16 +46,24 @@ export const metadata: Metadata = {
   },
 }
 
+/**
+ * Both types on one node: the page is a Blog by subject and a CollectionPage
+ * by form, and declaring only the former leaves the listing-page reading to be
+ * inferred. schema-dts models `@type` as a single literal, hence the cast.
+ */
+const BLOG_PAGE_TYPE = ["CollectionPage", "Blog"] as unknown as "Blog"
+
 function getBlogJsonLd(
   posts: { slug: string; metadata: { title: string; createdAt: string } }[]
 ): WithContext<Blog> {
   return {
     "@context": "https://schema.org",
-    "@type": "Blog",
+    "@type": BLOG_PAGE_TYPE,
     "@id": absoluteUrl("/blog"),
     name: title,
     description,
     url: absoluteUrl("/blog"),
+    inLanguage: "en-US",
     isPartOf: { "@id": JSON_LD_ID.website },
     blogPost: posts.map((post) => ({
       "@type": "BlogPosting",

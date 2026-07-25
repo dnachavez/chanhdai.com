@@ -32,14 +32,36 @@ export const MAIN_NAV: NavItem<Route>[] = [
     title: "Blog",
     href: "/blog",
   },
+  {
+    title: "Experience",
+    href: "/experience",
+  },
+  {
+    title: "Projects",
+    href: "/projects",
+  },
+  {
+    title: "Testimonials",
+    href: "/testimonials",
+  },
 ]
 
+/**
+ * Deliberately not `MAIN_NAV` plus Home. The mobile nav is a `w-fit` floating
+ * pill sharing its row with the command menu, and four text links -- one of
+ * them "Testimonials" -- overflow it on a phone. The three pages added to
+ * `MAIN_NAV` are for the header, which crawlers read (it is hidden with
+ * `max-sm:hidden`, so the markup is present either way) and which has room.
+ */
 export const MOBILE_NAV: NavItem<Route>[] = [
   {
     title: "Home",
     href: "/",
   },
-  ...MAIN_NAV,
+  {
+    title: "Blog",
+    href: "/blog",
+  },
 ]
 
 export const X_HANDLE = SOCIAL.x.handle

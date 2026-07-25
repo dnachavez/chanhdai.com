@@ -28,6 +28,9 @@ const isDevelopment = process.env.NODE_ENV !== "production"
 const developmentScriptSrc = isDevelopment ? [`'unsafe-eval'`] : []
 const developmentConnectSrc = isDevelopment ? ["ws:"] : []
 
+const CSP_REPORT_PATH = "/api/csp-report"
+const CSP_REPORT_GROUP = "csp-endpoint"
+
 const contentSecurityPolicy = [
   `default-src 'self'`,
   /**
@@ -63,6 +66,14 @@ const contentSecurityPolicy = [
    * `localhost`, so every dev subresource would be rewritten to https.
    */
   ...(isDevelopment ? [] : [`upgrade-insecure-requests`]),
+  /**
+   * Both spellings on purpose: `report-to` is the Reporting API directive
+   * Chrome honours, `report-uri` is deprecated but remains the only one
+   * Firefox and Safari implement. Dropping the latter would leave two of three
+   * engines reporting nothing.
+   */
+  `report-to ${CSP_REPORT_GROUP}`,
+  `report-uri ${CSP_REPORT_PATH}`,
 ].join("; ")
 
 const nextConfig: NextConfig = {
@@ -100,6 +111,15 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
+          /**
+           * Binds the `report-to` group name above to a URL. Without this
+           * header the directive names a group the browser has never heard of
+           * and is silently ignored.
+           */
+          {
+            key: "Reporting-Endpoints",
+            value: `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`,
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
