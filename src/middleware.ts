@@ -33,12 +33,7 @@ function contentSecurityPolicy(nonce: string) {
      * duck follower builds its keyframes as a computed `<style>` element.
      */
     `style-src 'self' 'unsafe-inline'`,
-    /**
-     * unavatar.io serves the Upwork testimonial avatar through a raw `<img>`
-     * in `src/components/testimonial.tsx`. Self-hosting it the way the other
-     * testimonial avatars are would let this entry go.
-     */
-    `img-src 'self' data: blob: https://unavatar.io`,
+    `img-src 'self' data: blob:`,
     `font-src 'self'`,
     `connect-src 'self' ${POSTHOG_HOSTS.join(" ")} https://api.openpanel.dev`,
     `frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
