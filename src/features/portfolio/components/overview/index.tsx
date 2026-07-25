@@ -25,7 +25,12 @@ import { PhoneItem } from "./phone-item"
 export function Overview() {
   return (
     <Panel className="screen-line-bottom-none">
-      <h2 className="sr-only">Overview</h2>
+      {/*
+        Question-shaped rather than a label ("Overview") because it is invisible
+        to readers anyway, and a question is the shape AI search extracts
+        passages against.
+       */}
+      <h2 className="sr-only">Who is {USER.displayName}?</h2>
 
       <PanelContent className="grid gap-x-4 gap-y-2.5 sm:grid-cols-2">
         {USER.jobs.map((job, index) => {
