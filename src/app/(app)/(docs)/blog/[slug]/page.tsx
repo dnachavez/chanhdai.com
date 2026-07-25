@@ -195,7 +195,7 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                   <TooltipTrigger
                     render={
                       <Button
-                        className="size-8 border-none"
+                        className="relative size-8 touch-manipulation border-none"
                         variant="secondary"
                         size="icon-sm"
                         asChild
@@ -204,6 +204,10 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                           href={`/blog/${previous.slug}`}
                           aria-label="Previous post"
                         >
+                          <span
+                            className="absolute size-12 pointer-fine:hidden"
+                            aria-hidden
+                          />
                           <ArrowLeftIcon />
                         </Link>
                       </Button>
@@ -225,7 +229,7 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                   <TooltipTrigger
                     render={
                       <Button
-                        className="size-8 border-none"
+                        className="relative size-8 touch-manipulation border-none"
                         variant="secondary"
                         size="icon-sm"
                         asChild
@@ -234,6 +238,10 @@ export default async function Page({ params }: PageProps<"/blog/[slug]">) {
                           href={`/blog/${next.slug}`}
                           aria-label="Next post"
                         >
+                          <span
+                            className="absolute size-12 pointer-fine:hidden"
+                            aria-hidden
+                          />
                           <ArrowRightIcon />
                         </Link>
                       </Button>

@@ -78,13 +78,17 @@ export function LLMCopyButton({ markdownUrl }: { markdownUrl: string }) {
 
   return (
     <Button
-      className="h-7 gap-1.5 border-none px-2 text-[0.8125rem] active:scale-none"
+      className="relative h-7 touch-manipulation gap-1.5 border-none px-2 text-[0.8125rem] active:scale-none"
       variant="secondary"
       size="sm"
       aria-busy={isCopying}
       disabled={isCopying}
       onClick={handleCopy}
     >
+      <span
+        className="absolute inset-x-0 h-12 pointer-fine:hidden"
+        aria-hidden
+      />
       <CopyStateIcon
         state={state}
         idleIcon={<IconCopy />}
@@ -188,11 +192,12 @@ export function ViewOptions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className="size-8 border-none active:scale-none"
+          className="relative size-8 touch-manipulation border-none active:scale-none"
           variant="secondary"
           size="icon-sm"
           aria-label="View Options"
         >
+          <span className="absolute size-12 pointer-fine:hidden" aria-hidden />
           <ChevronDownIcon className="mt-0.5 size-4" />
         </Button>
       </DropdownMenuTrigger>
