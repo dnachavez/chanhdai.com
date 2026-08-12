@@ -65,6 +65,13 @@ export const GEAR: Gear[] = [
     link: "https://global.redmagic.gg/products/redmagic-9-pro",
   },
   {
+    name: "iPhone 13 Pro Max",
+    description: "256GB · Graphite",
+    category: "Everyday carry",
+    image: "/images/gear/iphone-13-pro-max-graphite.png",
+    link: "https://support.apple.com/en-us/111870",
+  },
+  {
     name: "AirPods Pro",
     description: "Active noise cancellation",
     category: "Everyday carry",
