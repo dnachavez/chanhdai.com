@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
+import { ChanhDaiMark } from "@/components/chanhdai-mark"
+
 const geistSemiBold = readFileSync(
   join(process.cwd(), "src/assets/fonts/Geist-SemiBold.ttf")
 )
@@ -24,17 +26,7 @@ export async function GET(request: Request) {
       <div tw="absolute inset-x-0 bottom-12 flex h-px border border-zinc-800" />
 
       <div tw="absolute top-18 left-18 flex">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 512 256"
-          width={128}
-          height={64}
-        >
-          <path
-            fill="currentColor"
-            d="M192 256H64v-64h128v64ZM448 64H320v128h128v64H256V0h192v64ZM64 192H0V64h64v128ZM512 192h-64V64h64v128ZM192 64H64V0h128v64Z"
-          />
-        </svg>
+        <ChanhDaiMark width={128} height={64} />
       </div>
 
       <div tw="absolute inset-x-0 top-40 bottom-24 flex flex-col justify-end border-t-2 border-zinc-800">
