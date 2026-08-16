@@ -135,7 +135,8 @@ function TestimonialsMarquee({
             key={item.url}
             className="mx-0.5 h-full w-xs rounded-xl bg-background inset-ring-1 inset-ring-border transition-[background-color] ease-out hover:bg-accent-muted"
           >
-            <TestimonialItem {...item} />
+            {/* Long quotes would otherwise stretch the whole row; the full text lives on /testimonials */}
+            <TestimonialItem {...item} quoteClassName="line-clamp-6" />
           </MarqueeItem>
         ))}
       </MarqueeContent>
@@ -145,6 +146,7 @@ function TestimonialsMarquee({
 
 function TestimonialItem({
   className,
+  quoteClassName,
   authorAvatar,
   authorName,
   authorTagline,
@@ -152,11 +154,15 @@ function TestimonialItem({
   quote,
   icon,
   showIcon = false,
-}: TestimonialType & { className?: string; showIcon?: boolean }) {
+}: TestimonialType & {
+  className?: string
+  quoteClassName?: string
+  showIcon?: boolean
+}) {
   return (
     <Testimonial className={cn("group/testimonial relative", className)}>
       <TestimonialQuote className="font-serif text-base">
-        <p>
+        <p className={quoteClassName}>
           <Twemoji className="grayscale transition-[filter] duration-300 ease-[cubic-bezier(0.42,0,0.58,1)] group-hover/testimonial:grayscale-0">
             {quote}
           </Twemoji>
