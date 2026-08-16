@@ -29,6 +29,15 @@ export const TESTIMONIALS_1: Testimonial[] = [
       "We've been really happy with your performance at the company and would love to keep you on board for the long term.",
     date: "2026-06-21",
   },
+  {
+    authorAvatar: "/images/testimonials/john-nick-viduya.webp",
+    authorName: "John Nick Viduya",
+    authorTagline: "Tech Lead · Tolstoy & Framework",
+    url: "https://www.nickviduya.com",
+    quote:
+      "Dan was our go to full stack engineer on Tolstoy and Framework, and he was especially strong on the AI side. He could take a rough idea, figure out the right approach, and ship something that actually worked in production, not just in a demo. He understands both the model layer and the product around it, which is rarer than people think. On top of that he was reliable and easy to work with. Clear communication, no ego, took feedback well, and kept things moving. I'd work with him again without hesitation.",
+    date: "2026-08-16",
+  },
 ]
 
 // Short quotes (50 characters or fewer), ordered by date ascending
