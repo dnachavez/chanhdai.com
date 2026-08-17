@@ -7,6 +7,7 @@ import {
   CHAT_MODEL,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
+  MAX_OUTPUT_TOKENS,
   MAX_TURNS_PER_SESSION,
 } from "@/features/chat/config"
 import { checkRateLimit, getClientIp } from "@/features/chat/lib/rate-limit"
@@ -50,6 +51,19 @@ function textOf(message: { parts: { type: string; text?: string }[] }) {
 
 function problem(message: string, status: number, headers?: HeadersInit) {
   return Response.json({ error: message }, { status, headers })
+}
+
+/**
+ * Groq answers a request that exceeds the account's per-minute token ceiling
+ * with 413 (`rate_limit_exceeded`) and a throttled one with 429. Both mean
+ * "wait", not "broken", and telling someone to email instead of retrying loses
+ * a visitor who would have had an answer a minute later.
+ */
+function isUpstreamRateLimit(error: unknown) {
+  if (typeof error !== "object" || error === null) return false
+
+  const status = (error as { statusCode?: unknown }).statusCode
+  return status === 429 || status === 413
 }
 
 export async function POST(request: Request) {
@@ -121,7 +135,7 @@ export async function POST(request: Request) {
     providerOptions: { groq: { reasoningEffort: "low" } },
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
-    maxOutputTokens: 800,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     /** Stop billing for a stream the visitor already navigated away from. */
     abortSignal: request.signal,
   })
@@ -135,7 +149,8 @@ export async function POST(request: Request) {
      * channel correctly, and that is exactly what has been reported failing.
      */
     sendReasoning: false,
-    /** Never surface provider internals; the visitor gets the email instead. */
-    onError: () => CHAT_COPY.error,
+    /** Never surface provider internals; the visitor gets our copy instead. */
+    onError: (error) =>
+      isUpstreamRateLimit(error) ? CHAT_COPY.busy : CHAT_COPY.error,
   })
 }

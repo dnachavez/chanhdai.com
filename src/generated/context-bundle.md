@@ -52,6 +52,8 @@ Canonical page: /#hello
 
 Canonical page: /experience (the homepage shows only the three most recent roles at /#experience)
 
+Roles beyond the 4 most recent list their employer, title, dates and skills without the detailed achievements. If asked for specifics about one of those, say the detail is on /experience rather than guessing at it.
+
 ### Aeva AI Receptionist
 
 Canonical URL: /experience#experience-aeva
@@ -141,16 +143,6 @@ Location: Cebu City, Philippines (Remote)
 Period: 04.2024 – 12.2025
 Skills: Laravel, WebSocket, Google Maps API, Laravel Passport, Redis, MySQL, OAuth2
 
-- Led architecture and development of a food delivery platform from concept to production, scaling to 10,000+ orders and 2,000+ users in the first year on a Laravel modular monolith at 99.9% uptime.
-- Designed a real-time order tracking system with WebSockets and the Google Maps API, reducing API calls by 60% and customer support inquiries by 50%.
-- Architected a payment abstraction layer (COD, credit card, in-app wallet) with Laravel Passport OAuth2 and SMS-based OTP, increasing payment success rate by 35%.
-- Built a zone-based driver-matching engine ranking on proximity, vehicle type, and availability against Redis-cached driver state, cutting match time from 5 minutes to 90 seconds.
-- Diagnosed and resolved performance bottlenecks with eager loading, strategic indexing, and Redis caching, reducing p95 load time from 3.2s to 0.8s.
-- Combined optimistic locking, Laravel queue batch processing, and atomic transactions to sustain 100+ concurrent orders at peak without overselling inventory.
-- Implemented multi-guard authentication for 4 user types, each with a distinct permission model, on Laravel Passport and custom guards.
-- Built a granular RBAC system with JSON-configured permissions across 12+ modules, enabling non-engineers to manage access.
-- Structured the backend as a modular monolith on nwidart/laravel-modules with strict boundaries, decoupling code and improving maintainability by 60%.
-
 ### Develop Kreativity
 
 Canonical URL: /experience#experience-develop-kreativity
@@ -161,17 +153,6 @@ Location: Cebu City, Philippines (Remote)
 
 Period: 11.2023 – 12.2025
 Skills: Next.js, Laravel, WordPress, Make, Zapier, Figma, AI Automation, Brand Strategy, UI/UX Design, Team Leadership
-
-- Co-founded a digital agency from zero to 15+ clients across healthcare, retail, and technology, delivering an integrated offering of brand strategy, AI automation, software development, UI/UX, and content production.
-- Directed technical strategy and delivery for 30+ client projects, establishing reusable frameworks that cut custom development by 40% and project timelines by 50% at 95% client satisfaction.
-- Built an AI automation practice using no-code platforms (Make, Zapier), reducing manual client operations by 50% and creating a recurring revenue stream.
-- Standardized technology selection across client engagements with a decision matrix weighing complexity, timeline, and budget, enabling 20+ clients to scale their digital operations 3x.
-- Grew a brand strategy practice that raised average client engagement by 60% and follower growth by 120% while cutting strategy development time by 50%.
-- Established UI/UX and design-system practices in Figma, delivering 25+ redesigns that improved user satisfaction by 45%.
-- Stood up a content production pipeline that delivered 100+ brand assets, increasing client social engagement by 80% while cutting production time by 35%.
-- Rolled out AI chatbots for client lead generation, improving response times by 70% and lead conversion rates by 35%.
-- Delivered notable public work, including the [Lyons Global](https://lyonsglobal.us) website redesign and an [LMS platform](https://lms.lyonsglobal.us) for a digital health solutions company.
-- Scaled the team from 2 co-founders to 10+ developers, designers, and marketers.
 
 ### University of Southern Philippines Foundation
 
@@ -184,14 +165,6 @@ Location: Cebu City, Philippines (On-site)
 Period: 07.2023 – 07.2026
 Skills: LangGraph, React Native, Laravel, Vue.js, WebSocket, Elasticsearch, MySQL, Multi-Agent AI
 
-- Designed a multi-agent AI chat system with a LangGraph state-graph pipeline of specialized agents (admissions, registrar, financial), reaching 85% query resolution accuracy and reducing support staff workload by 40%.
-- Architected a React Native mobile app consolidating digital ID, RFID attendance, statement-of-account, and payments, integrated with Pinnacle ERP, increasing digital service adoption by 35%.
-- Built a Laravel and Vue.js [queue management system](https://kiosk.uspf.edu.ph/new-kiosk) with real-time WebSocket updates serving 500+ students daily, reducing wait times by 80%.
-- Developed secure online election platforms ([JHS](https://jhselection.uspf.edu.ph), [SHS](https://shselection.uspf.edu.ph)) with cryptographic vote hashing and audit trails, enabling 3,000+ voters and cutting counting time from 1 hour to 15 minutes.
-- Built an [electronic judging system](https://ejs.uspf.edu.ph) for university events, delivering real-time score tabulation and transparent, auditable judging.
-- Created a digital repository for 2,000+ theses and research papers with Elasticsearch-powered search, improving research accessibility by 70%.
-- Led a PowerEdge R440 infrastructure upgrade and deployed an on-premise [document resource management system](https://drms.uspf.edu.ph), improving workflow efficiency by 60%.
-
 ### MyToolz
 
 Canonical URL: /experience#experience-mytoolz
@@ -203,11 +176,6 @@ Location: Bangladesh (Remote)
 Period: 07.2021 – 12.2021
 Skills: PHP, REST API, AES Encryption, cURL, Rate Limiting
 
-- Rebuilt a high-traffic Blogger link locker after finding a client-side base64 masking vulnerability, migrating to an externally hosted API with AES encryption and ID obfuscation while maintaining sub-200ms response times.
-- Implemented a strict HTTP referrer validation layer that reduced unauthorized content scraping by 70% without impacting legitimate traffic.
-- Developed a multi-purpose PHP API toolkit (proxy detection, email verification, crypto balances, account checks) with rate limiting and caching, handling 10,000+ daily requests at sub-500ms p95 latency.
-- Migrated validation logic in-house from third-party APIs, cutting operational costs by 50% and improving uptime from 97% to 99.5%.
-
 ### Where it all started
 
 Canonical URL: /experience#experience-where-it-all-started
@@ -218,42 +186,25 @@ Canonical URL: /experience#experience-where-it-all-started
 Period: 2019 – 2021
 Skills: GCP, Azure, Windows Server, Penetration Testing, Security
 
-- Explored cloud infrastructure early on, deploying and running workloads across GCP and Windows servers on Azure.
-- Built a foundation in security fundamentals through dorking and hands-on penetration testing tools like Havij.
-
 #### Teaching myself to build
 
 Period: 2018 – 2020
 Skills: PHP, Java, XHTML, WAPKA, Web Development
-
-- Self-taught PHP, Java, and web development using early mobile web builders like WAPKA, WAP, and XHTML.
-- Built websites and tools from scratch, years before any formal education.
 
 #### Building tools & game mods
 
 Period: 2017 – 2019
 Skills: XenForo, Android, Java, Psiphon, Networking, Automation, Reverse Engineering
 
-- Built a XenForo forum and mobile apps for Betamin, a Mobile Legends: Bang Bang hacks and tips community.
-- Built [Netify VPN](https://www.ayodata.com.ng/2016/02/mtn-with-netify-vpn-settings-how-to-use.html), a Psiphon-based VPN handler for Android that provided free internet access by tunneling traffic through proxy configurations, gaining early experience in networking, tunneling protocols, and mobile app development.
-- Developed [Drop Tools](https://phcorner.org/threads/drop-tools-mlbb-amazon-drop.963709/), an Android app that automated Amazon Prime reward drops in Mobile Legends: Bang Bang, with account creation, subscription renewal, account recovery, and a drop booster for claiming in-game loot, distributed through the PHCorner developer community.
-- Built [Fakecez MLBB Mod Key Generator](https://www.youtube.com/shorts/Iy19xcgKgr0), automating API key retrieval for a cheat engine by bypassing ad-heavy redirect chains and collapsing a tedious multi-step process into a single action.
-
 #### Growing up in dev communities
 
 Period: 2016 – 2021
 Skills: Open Source, Community, Collaboration
 
-- Collaborated with early Filipino developer communities including ZyberPH Developers and DDEV Philippines.
-- Contributed to community projects and learned from peers in the local dev scene.
-
 #### The reverse-engineering days
 
 Period: 2016 – 2017
 Skills: Reverse Engineering, Smali, APK Decompiling, Android
-
-- Reverse-engineered Android applications by decompiling APKs and reading Smali bytecode, learning how software works from the inside out.
-- Traced compiled code to understand program structure and control flow, long before writing anything from scratch.
 
 ## Projects
 
@@ -448,6 +399,8 @@ Canonical page: /#gear
 
 Canonical page: /blog
 
+Only titles and summaries are held here, not the posts themselves. Describe what a post covers and link to it; never invent or paraphrase its contents.
+
 ### The long way to magna cum laude
 
 Canonical URL: /blog/the-long-way-to-magna-cum-laude
@@ -455,357 +408,9 @@ Published: Thu Jul 16 2026 08:00:00 GMT+0800 (Philippine Standard Time)
 Updated: Thu Jul 16 2026 08:00:00 GMT+0800 (Philippine Standard Time)
 Summary: From a PisoNet in Dumalag, Capiz to writing code on a phone through college, the story behind graduating magna cum laude and becoming a full stack and AI engineer.
 
-On June 20, 2026, I walked across a stage in Cebu and graduated magna cum laude with a Bachelor of Science in Computer Science, a 1.44 GPA, and the top academic standing in my college. In the Philippine grading system, the closer you are to 1.00, the better, so that number carries a lot of weight for me.
-
-But a GPA is a single line on a piece of paper. It doesn't show the PisoNet sessions, the netbook that died, the nights I wrote code on a phone, or the back-and-forth across the city between school and work. This is the story behind that line.
-
-![Graduating class at the University of Southern Philippines Foundation commencement](/images/blog/grad-commencement-group.webp)
-
-*Graduation day at the University of Southern Philippines Foundation, June 20, 2026.*
-
-#### Dumalag, Capiz
-
-I'm from Dumalag, a small town in the province of Capiz on Panay Island, in the Western Visayas region of the Philippines. If you don't know it, that's fair. It's the kind of place you pass through, not the kind of place you expect a software engineer to come from.
-
-Panay is rice fields and rivers, jeepneys and fiestas, and neighbors who know your whole family. It's quiet in the way that makes a big dream feel a little unreasonable. I loved growing up there, but I also knew early on that the future I wanted in tech didn't have an obvious road out of my hometown. I'd have to build that road myself.
-
-#### Leaving home for Cebu
-
-When it was time for college, I left Dumalag for Cebu City to study Computer Science at the [University of Southern Philippines Foundation](https://uspf.edu.ph) (USPF). It's not a short hop. It meant leaving home, leaving the people I grew up with, and figuring out a much bigger, faster city mostly on my own.
-
-That first stretch was hard in ways that had nothing to do with the coursework. Money was tight, everything was new, and I was suddenly responsible for a life that used to be shared with family. I told myself the discomfort was the price of admission and kept moving.
-
-![Leaving Dumalag for Cebu](/images/blog/leaving-dumalag.webp)
-
-*The day I left Dumalag for Cebu.*
-
-#### Coding on a phone
-
-Here's the part I usually skip when people ask about college: for my first and second year, I didn't have a laptop.
-
-The one I'd been using, an old Toshiba netbook, finally gave out and wouldn't turn on anymore. Replacing it wasn't an option at the time, so I did the only thing I could. I used my phone. An Oppo A1 Pro became my entire development machine.
-
-To run a PHP environment, I used KSWeb. I wrote all my code in [Acode](https://acode.app), a mobile code editor. And when I needed to build something with Node.js, I'd spin up an environment in [Termux](https://termux.dev) and run the app from there. My IDE, my server, and my terminal all lived on a screen I could cover with my hand.
-
-It was slow. It was cramped. Compiling anything felt like a small act of faith. But it worked, and more than that, it taught me that the tools are never the real bottleneck. The willingness to keep going is.
-
-#### Where it all started
-
-To really understand how I ended up coding on a phone without flinching, I have to go back further, to before college and before I ever called myself a developer.
-
-Long before any of the building, I was just a kid in the PisoNet and computer shops. That's where I spent my hours, grinding League of Legends, dropping into Rules of Survival, and driving through GTA Vice City and San Andreas. Those shops were my first real relationship with a computer, even if all I was doing was playing.
-
-At some point the curiosity flipped. I got more interested in how the games and apps worked than in playing them. I started reverse-engineering Android apps, decompiling APKs and reading Smali bytecode, to see how software was put together from the inside. That led to teaching myself PHP, Java, and web development with the scrappy mobile-era tools that were around, like WAPKA and XHTML, building websites and small tools years before anyone formally taught me anything.
-
-I grew up inside early Filipino developer communities, learning from people I'd never met in person. I built things because I wanted them to exist: a forum for a mobile gaming community, a VPN handler for Android, automation tools and game mods that I shared with the crowds I hung out with online. Later I fell down cloud and security rabbit holes too, poking at servers and security tooling just to understand how it all fit.
-
-None of it was a plan. It was just a kid who couldn't stop taking things apart. By the time the netbook died in college, building on almost nothing already felt normal to me.
-
-#### Scouting came first
-
-Before I ever led a team of engineers, I learned to lead in a very different setting. I came up through scouting as a Senior Scout and earned the Venturer rank, the kind of thing that sounds small until you realize how much of it stuck.
-
-Scouting drilled the unglamorous fundamentals into me: show up prepared, look after the person next to you, stay calm when the plan falls apart, and finish what you start even when you're tired and far from home. Years later, running on no sleep against a deadline, those were exactly the muscles I leaned on.
-
-![Scouting days](/images/blog/scout-1.webp)
-
-![Working toward the Venturer rank](/images/blog/scout-2.webp)
-
-![Out in the field](/images/blog/scout-3.webp)
-
-![Learning to lead early](/images/blog/scout-4.webp)
-
-![Scout's honor](/images/blog/scout-5.webp)
-
-#### Words came before code
-
-Before I ever shipped a line of code, I wrote.
-
-I've been a campus journalist since elementary school. In high school at Dumalag Central National High School, I wrote for our publication, The Primeval. And in college, I became part of [The Southern Scholar](https://www.facebook.com/Uspfthesouthernscholar/), the official student publication of USPF. Journalism taught me to notice things, to ask better questions, and to tell a story people actually want to read. It's a big reason this blog exists at all.
-
-It also took me places. The Southern Scholar sent us to national campus press conferences as far as Tagaytay and Zamboanga, and put me on stages I never expected to stand on.
-
-![The Southern Scholar at a national campus press conference](/images/blog/tss-press-conference.webp)
-
-![Bringing home recognition with the Southern Scholar](/images/blog/tss-awards.webp)
-
-![A roadside stop on a Southern Scholar trip](/images/blog/travel-roadtrip.webp)
-
-![Downtime with the Southern Scholar crew](/images/blog/friends-donut-shop.webp)
-
-#### The problem no one else could solve
-
-In my first year at USPF, our college held its CCS Days, and there was a problem-solving challenge as part of it. I sat down with it and, as it turned out, I was the only one who managed to solve it.
-
-That one moment changed my trajectory. The adviser in charge of that challenge, [Mr. Boi Archievald Ranay](https://www.linkedin.com/in/boi-archievald-ranay-a4393964/), sought me out afterward and asked me to join a hackathon, alongside third and fourth year students, while I was still a freshman. My first one was the [Cebu Interschool Hackathon](https://www.philstar.com/the-freeman/cebu-business/2023/06/15/2274044/cibo-jobtarget-spearhead-cebu-interschool-hackathon) spearheaded by CIB.O and JobTarget, going up against teams from universities all over the city. We didn't win. But I bonded with those upperclassmen in a way that stuck, and I walked out certain this was the room I wanted to be in.
-
-That was just the start. Over the next few years I kept showing up for interschool competitions, from more hackathons to the HACK4GOV cyber challenge, learning to think and build under pressure against the best teams in the region.
-
-![The Cebu Interschool Hackathon by CIB.O and JobTarget](/images/blog/uspf-competition-session.webp)
-
-![HACK4GOV CERT-PH cyber challenge, an interschool competition](/images/blog/hack4gov.webp)
-
-![Arriving for an interschool hackathon](/images/blog/event-airport-arrival.webp)
-
-![With the team for the Mactan airport hackathon](/images/blog/travel-mactan-airport-1.webp)
-
-![Behind the scenes during hackathon season](/images/blog/tss-production.webp)
-
-#### Building for my university
-
-That recognition opened a door that quietly reshaped everything: the chance to become a working scholar and full stack developer for USPF ICT, building real systems for the university while I studied at it.
-
-And I built a lot. A multi-agent AI chat system for admissions, the registrar, and finance; a React Native campus digital app that pulled together digital ID, RFID attendance, statements of account, and payments; a Laravel and Vue.js queue management kiosk with real-time updates that served hundreds of students a day; secure online election platforms with cryptographic vote hashing; an electronic judging system; and a searchable digital repository for thousands of theses. I also got to stand in front of ICT and present our campus digital app and AUGI AI, the kind of moment that used to terrify the camera-shy version of me.
-
-![One of the systems I built for USPF: the campus kiosk](/images/blog/uspf-kiosk.webp)
-
-![Presenting our campus digital app and AUGI AI to USPF ICT](/images/blog/tss-onstage.webp)
-
-![A USPF ICT team-building day](/images/blog/cafe-day-out.webp)
-
-#### Leading the College of Computer Studies
-
-Somewhere along the way, the shy freshman who almost skipped his first hackathon ran for office, and ended up as president of the College of Computer Studies. That meant campaigning, representing our college in rooms I never pictured myself in, including inter-org meetings with the other university IT and CS organizations, and looking after the people coming up behind me.
-
-![Our campaign poster for the CCS officer elections](/images/blog/ccs-election-poster.webp)
-
-![Representing our college at an inter-org IT and CS meeting, as president](/images/blog/tss-campus.webp)
-
-![A College of Computer Studies team-building dinner](/images/blog/dk-team-dinner.webp)
-
-![College team building at a mountain-view resort](/images/blog/travel-resort-pool.webp)
-
-It wasn't all serious business. Some of my favorite memories are the small ones, like my officers surprising me on my birthday, which happened to land on the same day as our soccer game at the USPF intramurals.
-
-![A birthday surprise from the officers](/images/blog/birthday-intramurals-1.webp)
-
-![Same day as our intramurals soccer game](/images/blog/birthday-intramurals-2.webp)
-
-![College life off the keyboard](/images/blog/birthday-intramurals-3.webp)
-
-And we repped USPF hard in esports, from the SMART Interschool Mobile Legends tournament to our own intramurals MLBB matches.
-
-![Our USPF Panthers squad at the SMART Interschool Mobile Legends tournament](/images/blog/uspf-ccs-college-1.webp)
-
-![The College of Computer Studies esports team](/images/blog/uspf-ccs-college-2.webp)
-
-![Panthers, ready to play](/images/blog/uspf-ccs-officers.webp)
-
-![Post-match, pizza and jerseys](/images/blog/uspf-ccs-friends.webp)
-
-![USPF intramurals Mobile Legends](/images/blog/intramurals-mlbb-1.webp)
-
-![Game face on](/images/blog/intramurals-mlbb-2.webp)
-
-![Repping the college on the intramurals stage](/images/blog/intramurals-mlbb-3.webp)
-
-![Win or lose, together](/images/blog/intramurals-mlbb-4.webp)
-
-#### A three-peat at CCS Days
-
-And then there was our own turf. Year after year, our team went into the CCS Days hackathon and came out on top, becoming three-time overall champions, a three-peat I'm still proud of. The kid who barely had a machine was suddenly on the team everyone else was trying to beat.
-
-![CCS Days awarding, Team Yellow Aries](/images/blog/ccs-days-awarding.webp)
-
-![CCS Days hackathon champions](/images/blog/ccs-days-champion.webp)
-
-![Another CCS Days hackathon](/images/blog/ccs-days-hackathon-01.webp)
-
-![In the thick of it](/images/blog/ccs-days-hackathon-02.webp)
-
-![With the hackathon team](/images/blog/ccs-days-hackathon-03.webp)
-
-![Hackathon season at CCS Days](/images/blog/ccs-days-hackathon-04.webp)
-
-![Building with the crew](/images/blog/ccs-days-hackathon-05.webp)
-
-![CCS Days](/images/blog/ccs-days-hackathon-06.webp)
-
-![Long hours, good company](/images/blog/ccs-days-hackathon-07.webp)
-
-![The team at CCS Days](/images/blog/ccs-days-hackathon-08.webp)
-
-![Hackathon mode](/images/blog/ccs-days-hackathon-09.webp)
-
-![One more for the win](/images/blog/ccs-days-hackathon-10.webp)
-
-#### Building Develop Kreativity
-
-Around this time I co-founded a digital agency, [Develop Kreativity](https://www.developkreativity.com), together with [Kenneth Manatad](https://ph.linkedin.com/in/kenneth-manatad-549176375), a peer of mine from The Southern Scholar.
-
-I still remember how fast the beginning was. We had a real client on the line, [Lyons Global](https://lyonsglobal.us), and almost nothing to show them yet. So we rushed everything at once: the name, the logo, the pages, the portfolio, all of it built in a blur so we could look like a company that already existed. It worked. We landed them.
-
-What followed was a stretch of sleepless nights I won't romanticize. We finished entire systems in three days, sometimes in a week, running on deadlines and adrenaline. It was chaotic and exhausting, and it was also where I learned to ship under real pressure for real clients, not just for a grade.
-
-![A Develop Kreativity working session](/images/blog/dk-meeting-1.webp)
-
-![Planning with the team](/images/blog/dk-meeting-2.webp)
-
-![Meetings that turned into deadlines](/images/blog/dk-meeting-3.webp)
-
-![With the Develop Kreativity team](/images/blog/friends-mall.webp)
-
-#### My first full-time job
-
-My first real full-time job did not come easy. There was no lucky referral, no clean shortcut.
-
-I was sending applications on LinkedIn relentlessly, at least a hundred a day. Most went nowhere. Out of all of them, the one that eventually replied was [XFusion](https://xfusion.io), the third-party HR partner for a company called [Tolstoy](https://www.gotolstoy.com). And even that reply came from an unexpected direction.
-
-Tolstoy's CEO, [Dov Kaufmann](https://www.linkedin.com/in/dovkaufmann/), had asked the team to go back through candidates who had failed the coding test and see if any of them could still become part of the AI team being built in Cebu. [John Nick Viduya](https://nickviduya.com), who led the Cebu office at the time, was the one who went looking. He found my content on TikTok, where I'd been posting about my portfolio, and noticed we came from the same alma mater. That's how the offer found me, not through the front door, but through someone willing to give a second look.
-
-And then, embarrassingly, I almost let it slip. Part of the process required a Loom recording of myself introducing who I was, and at that point in my life I was painfully camera shy. I didn't want to record it. I sat on that requirement for over a week before I finally forced myself to hit record. That one uncomfortable video was the difference between this story happening and not happening at all.
-
-Once I actually started, the logistics were brutal. It was a mid shift that overlapped with my class hours, so I lived in the gaps. I'd go to the office during breaks, work, then rush back to school for my next subject, over and over. The commute was between USPF on Salinas Drive in Lahug and our office at Regus in the Apple One Equicom Tower, near Ayala Center Cebu and the Cebu Business District. When traffic was bad and I couldn't book a MoveIt or a Maxim, I simply walked it. A lot of that year happened on foot.
-
-![A late-night build session at Tolstoy](/images/blog/dk-late-night.webp)
-
-![With the Tolstoy crew between shifts](/images/blog/friends-bakeshop.webp)
-
-#### Flipping my body clock
-
-If the mid shift was hard, my next role at [GoTeam](https://go.team) introduced a different kind of difficulty entirely: it was a night shift.
-
-I worked from 8 PM to 6 AM, then slept for a couple of hours, then went back to school at 8 or 9 AM, and repeated. My body clock never really knew what time it was. It was, without exaggeration, one of the most difficult stretches of my life.
-
-Picture it: rushing from school back home just to start work, and when the internet or electricity gave out at home, packing up and heading to the office anyway so I wouldn't miss the shift. I didn't get to join my classmates for the after-school things, the hangouts, the little celebrations, the normal parts of being a student. I genuinely had to sacrifice them. There wasn't enough of me to go around, so I gave up the parts that felt like a luxury and kept the parts that felt like survival.
-
-#### Giving back anyway
-
-You'd think there was no room left for anything else. Somehow, there was.
-
-Through all of it, I stayed an active volunteer in the local tech community: [GDG Cebu](https://gdg.community.dev/gdg-cebu), [AWS Community Day Cebu](https://www.facebook.com/awsugcebu), and Cebu Hacktoberfest, and I kept turning up for community moments like LISK Pitching Day and DOST-VII activities. Those rooms gave me something the grind couldn't: perspective, people, and a reminder of why I started taking things apart in the PisoNet in the first place. Volunteering wasn't a break from the work. It was the thing that kept the work from hollowing me out.
-
-![Google I/O Extended Cebu 2024](/images/blog/gdg-io-cebu-2024.webp)
-
-![Build with AI 2025, GDG Cebu](/images/blog/gdg-build-with-ai-1.webp)
-
-![Build with AI 2025 turnout](/images/blog/gdg-build-with-ai-2.webp)
-
-![Google I/O Extended Cebu 2025](/images/blog/gdg-io-extended-2025.webp)
-
-![Hands-on at a workshop](/images/blog/gdg-workshop-1.webp)
-
-![Debugging together at Build with AI](/images/blog/gdg-workshop-2.webp)
-
-![Cebu Hacktoberfest](/images/blog/cebu-hacktoberfest-1.webp)
-
-![On stage at Cebu Hacktoberfest with PizzaPy](/images/blog/cebu-hacktoberfest-2.webp)
-
-![LISK Pitching Day, Cebu](/images/blog/lisk-pitching-day-1.webp)
-
-![At LISK Pitching Day with the community](/images/blog/lisk-pitching-day-2.webp)
-
-![Visiting the DOST-VII](/images/blog/dost-amcen-visit.webp)
-
-![An IBPAP industry gathering](/images/blog/ibpap-event-1.webp)
-
-![At an IBPAP event](/images/blog/ibpap-event-2.webp)
-
-![Pitching at an IBPAP demo day](/images/blog/ibpap-pitch-day.webp)
-
-#### The places this took me
-
-For a kid who once couldn't afford a laptop, the passport stamps still don't feel real.
-
-With my College of Computer Studies, I traveled to Indonesia for FACE IT, the FILKOM Academic and Cultural Exchange on Information Technology at [Universitas Brawijaya](https://www.ub.ac.id) in Malang, and that same trip took us as far as Singapore. Most of it started the same way: a group of us under the wooden arches of Mactan-Cebu International Airport, barely believing we were the ones getting on the plane.
-
-![Under the wooden arches of Terminal 2](/images/blog/travel-mactan-airport-2.webp)
-
-![An airport send-off](/images/blog/travel-mactan-airport-night.webp)
-
-![A late-night terminal run](/images/blog/travel-terminal-night.webp)
-
-![Boarding, the delegation heading out](/images/blog/travel-boarding-selfie.webp)
-
-![FACE IT at FILKOM, Universitas Brawijaya, Malang, Indonesia](/images/blog/travel-face-it-indonesia.webp)
-
-![The Merlion, Singapore](/images/blog/travel-singapore-merlion.webp)
-
-![Heritage steps, Singapore](/images/blog/travel-singapore-heritage.webp)
-
-Later, work took me even further. I flew to Hong Kong with the Tolstoy and XFusion team, a trip that still feels like a plot twist in my own story.
-
-![Somewhere in Hong Kong](/images/blog/travel-hong-kong.webp)
-
-![World of Frozen, Hong Kong Disneyland](/images/blog/travel-hk-disneyland-frozen.webp)
-
-![Hyperspace Mountain, Hong Kong Disneyland](/images/blog/travel-hk-disneyland-hyperspace.webp)
-
-#### The academic side
-
-Through all the jobs, the traveling, and the volunteering, the coursework never took a back seat. I made the Dean's List every single semester, from my first to my last.
-
-My capstone was a thesis I genuinely loved: Conduit, a cloud-native AI call center built end to end on serverless AWS with OpenAI. Defending it felt like the natural sum of everything, from reverse-engineering APKs as a kid to shipping production AI systems for work.
-
-![Defending my thesis, Conduit, a cloud-native AI call center](/images/blog/thesis-presentation.webp)
-
-![On the CCS Dean's List](/images/blog/deans-list-1.webp)
-
-![Dean's List awarding](/images/blog/deans-list-2.webp)
-
-![Every semester on the list](/images/blog/deans-list-3.webp)
-
-![Recognition night](/images/blog/deans-list-4.webp)
-
-![With the honor roll](/images/blog/deans-list-5.webp)
-
-![Closing out the degree strong](/images/blog/deans-list-6.webp)
-
-#### Magna cum laude
-
-By the time graduation came around, I was already working as a full stack developer at [Aeva AI Receptionist](https://www.aevaai.com), helping build an AI-powered phone receptionist for clinics, even as I waited to officially close out my degree.
-
-So on June 20, 2026, when I walked that stage as magna cum laude and the top graduate of my college, it wasn't really about the 1.44. It was about the netbook that died, the phone that became a workstation, the hundred applications a day, the Loom I almost didn't record, the walks across Cebu when I couldn't afford a ride, and the nights I traded sleep for a shift. A week later, we were still celebrating, my USPF ICT family and my Tolstoy colleagues all in one room.
-
-![With my parents on graduation day](/images/blog/grad-with-parents.webp)
-
-![Diploma and medals, USPF commencement](/images/blog/grad-diploma-medal.webp)
-
-![A celebration a week after graduation, with USPF ICT and my Tolstoy colleagues](/images/blog/tolstoy-team-celebration.webp)
-
-I came from a small town in Capiz with a very unreasonable dream. It turns out the dream was fine. I just had to build the road to it myself, one uncomfortable step at a time.
-
-If you're reading this from your own version of a PisoNet, coding on whatever you can get your hands on: keep going. The tools are never the real bottleneck.
-
----
-
 ### Welcome to dnachavez.dev
 
 Canonical URL: /blog/welcome
 Published: Wed Jul 15 2026 08:00:00 GMT+0800 (Philippine Standard Time)
 Updated: Wed Jul 15 2026 08:00:00 GMT+0800 (Philippine Standard Time)
 Summary: A pixel-perfect dev portfolio showcasing my work as a Full Stack & AI Engineer.
-
-#### Stack
-
-* Next.js 16
-* Tailwind CSS v4
-* shadcn/ui
-
-#### Featured
-
-* Clean & modern design
-* Light/Dark themes
-* vCard integration
-* SEO optimized ([JSON-LD schema](https://json-ld.org), sitemap, robots)
-* AI-ready with [/llms.txt](https://llmstxt.org)
-* Spam-protected email
-* Installable as PWA
-* Analytics with [PostHog](https://posthog.com) and [OpenPanel](https://openpanel.dev)
-
-#### Content
-
-Centralized document system powered by MDX:
-
-* Unified content layer for blog posts
-* Category-based content organization
-* Raw `.mdx` endpoints for AI readability
-* Syntax highlighting with code blocks
-* Dynamic OG images for rich link previews
-* RSS feed for content distribution
-
-#### License
-
-Licensed under the [MIT license](https://github.com/dnachavez/dnachavez.dev/blob/main/LICENSE). The source code is available on [GitHub](https://github.com/dnachavez/dnachavez.dev).
-
-> You're free to use my code! Just make sure to remove all my personal information before publishing your website. It's awesome to see my code being useful to someone!

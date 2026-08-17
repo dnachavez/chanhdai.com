@@ -24,7 +24,6 @@ import fs from "node:fs"
 import path from "node:path"
 
 import { getBlogPosts } from "@/features/doc/data/documents"
-import { renderDocBody } from "@/features/doc/lib/get-llm-text"
 import { AWARDS } from "@/features/portfolio/data/awards"
 import { CERTIFICATIONS } from "@/features/portfolio/data/certifications"
 import { EDUCATION } from "@/features/portfolio/data/education"
@@ -41,12 +40,40 @@ import { USER } from "@/features/portfolio/data/user"
 const OUTPUT_DIR = path.join(process.cwd(), "src/generated")
 
 /**
- * Ceiling on the bundle, not on the model. gpt-oss-120b takes 131k, but the
- * bundle is resent on every turn of every conversation, so its size is the
- * dominant cost driver on a free tier. Tripping this should prompt a decision
- * about what to summarise, not a bigger number.
+ * The binding constraint is Groq's free tier, not the context window.
+ *
+ * gpt-oss-120b accepts 131k tokens, but on the `on_demand` tier the account is
+ * capped at 8,000 tokens per minute counting input and output together. The
+ * bundle is resent whole on every turn, so it is charged against that ceiling
+ * every single request — an early version at ~12.7k tokens could not complete
+ * even one call, failing with a 413 rather than merely throttling.
+ *
+ * Two different failures hang off that ceiling, and only one of them is fatal:
+ *
+ * - A single request larger than 8,000 fails with a 413 every time, for
+ *   everyone, forever. No retry helps. This budget exists to make that
+ *   impossible.
+ * - More than roughly one request per minute gets a retryable 429. That is a
+ *   throughput problem, handled by the per-IP limiter and the "give it a
+ *   minute" copy, not by this number.
+ *
+ * Derived by subtracting everything else in a request from the ceiling:
+ * 8,000 − 600 (reply) − ~700 (system prompt) − ~400 (question and trimmed
+ * history) − ~800 margin. Growth beyond this should trim a section, not raise
+ * the number, because the ceiling is not ours to move.
  */
-const TOKEN_BUDGET = 40_000
+const TOKEN_BUDGET = 5_500
+
+/**
+ * Roles that keep their full achievement bullets, newest first. The rest are
+ * reduced to employer, title, dates and skills.
+ *
+ * Every role stays present either way, because an employment timeline with
+ * gaps in it is worse than one without detail. What goes is the depth on older
+ * roles, which /experience still carries in full and which the assistant links
+ * to.
+ */
+const EXPERIENCE_DETAIL_LIMIT = 4
 
 /** Rough enough to catch a runaway; exact counting would need a tokenizer. */
 function estimateTokens(text: string) {
@@ -63,73 +90,6 @@ function stripHtml(markdown: string) {
 
 function section(heading: string, body: string) {
   return `## ${heading}\n\n${body.trim()}\n`
-}
-
-/** Matches an ATX heading, capturing its `#` run. Indented up to 3 spaces per CommonMark. */
-const HEADING = /^ {0,3}(#{1,6})(\s)/
-/** Opening or closing fence for a code block, ``` or ~~~. */
-const FENCE = /^ {0,3}(`{3,}|~{3,})/
-
-/**
- * Rewrites a post's headings so its shallowest one sits at `targetLevel`.
- *
- * Post bodies are spliced under a `###` entry inside the Writing section, and
- * their own `##` headings would otherwise land as siblings of `## About` and
- * `## Experience` — making "Dumalag, Capiz" read as a top-level section of the
- * profile rather than a heading inside one blog post. The shift is computed
- * from the shallowest heading present rather than hardcoded, so a post that
- * starts at `#` and one that starts at `##` both nest correctly.
- *
- * Fenced blocks are tracked so a `# comment` in a shell snippet is left alone.
- */
-function nestHeadings(markdown: string, targetLevel: number) {
-  const lines = markdown.split("\n")
-
-  let fence: string | null = null
-  let shallowest = 7
-
-  for (const line of lines) {
-    const fenceMatch = line.match(FENCE)
-    if (fenceMatch) {
-      const marker = fenceMatch[1][0]
-      if (fence === null) fence = marker
-      else if (fence === marker) fence = null
-      continue
-    }
-    if (fence !== null) continue
-
-    const headingMatch = line.match(HEADING)
-    if (headingMatch) {
-      shallowest = Math.min(shallowest, headingMatch[1].length)
-    }
-  }
-
-  if (shallowest === 7) return markdown
-
-  const shift = targetLevel - shallowest
-  if (shift === 0) return markdown
-
-  fence = null
-
-  return lines
-    .map((line) => {
-      const fenceMatch = line.match(FENCE)
-      if (fenceMatch) {
-        const marker = fenceMatch[1][0]
-        if (fence === null) fence = marker
-        else if (fence === marker) fence = null
-        return line
-      }
-      if (fence !== null) return line
-
-      return line.replace(HEADING, (_, hashes: string, space: string) => {
-        // Markdown stops at h6; deeper nesting would silently stop rendering
-        // as a heading, so clamp rather than emit `#######`.
-        const level = Math.min(6, Math.max(1, hashes.length + shift))
-        return `${"#".repeat(level)}${space}`
-      })
-    })
-    .join("\n")
 }
 
 function aboutSection() {
@@ -156,16 +116,19 @@ ${SOCIAL_LINKS.map((link) => `- ${link.title} (${link.handle}): ${link.href}`).j
 }
 
 function experienceSection() {
-  const roles = EXPERIENCES.map((company) => {
+  const roles = EXPERIENCES.map((company, index) => {
+    const detailed = index < EXPERIENCE_DETAIL_LIMIT
+
     const positions = company.positions
       .map((position) => {
         const period = `${position.employmentPeriod.start} – ${position.employmentPeriod.end ?? "Present"}`
         const skills = position.skills?.length
           ? `\nSkills: ${position.skills.join(", ")}`
           : ""
-        const description = position.description
-          ? `\n\n${position.description.trim()}`
-          : ""
+        const description =
+          detailed && position.description
+            ? `\n\n${position.description.trim()}`
+            : ""
 
         return `#### ${position.title}\n\nPeriod: ${period}${skills}${description}`
       })
@@ -185,7 +148,11 @@ function experienceSection() {
 
   return section(
     "Experience",
-    `Canonical page: /experience (the homepage shows only the three most recent roles at /#experience)\n\n${roles}`
+    `Canonical page: /experience (the homepage shows only the three most recent roles at /#experience)
+
+Roles beyond the ${EXPERIENCE_DETAIL_LIMIT} most recent list their employer, title, dates and skills without the detailed achievements. If asked for specifics about one of those, say the detail is on /experience rather than guessing at it.
+
+${roles}`
   )
 }
 
@@ -274,31 +241,44 @@ function gearSection() {
   return section("Gear", `Canonical page: /#gear\n\n${gear}`)
 }
 
-async function writingSection() {
+/**
+ * An index of the writing, not the writing itself.
+ *
+ * Post bodies were 5,951 of the bundle's 12,708 tokens — 47% — for content
+ * that is one click away on a page the assistant links to. Carrying them made
+ * every request exceed the free tier's per-minute ceiling outright, which cost
+ * the whole feature to answer a question nobody had yet asked.
+ *
+ * The trade is real: the assistant can say what a post covers and link to it,
+ * but cannot discuss its contents. Restoring the bodies is a paid-tier
+ * decision, and `renderDocBody` in get-llm-text.ts is the seam to do it
+ * through.
+ */
+function writingSection() {
   const posts = getBlogPosts()
 
-  const bodies = await Promise.all(
-    posts.map(async (post) => {
-      const body = await renderDocBody(post.content)
-
-      return `### ${post.metadata.title}
+  const entries = posts
+    .map(
+      (post) => `### ${post.metadata.title}
 
 Canonical URL: /blog/${post.slug}
 Published: ${post.metadata.createdAt}
 Updated: ${post.metadata.updatedAt}
-Summary: ${post.metadata.description}
-
-${nestHeadings(body.trim(), 4)}`
-    })
-  )
+Summary: ${post.metadata.description}`
+    )
+    .join("\n\n")
 
   return section(
     "Writing",
-    `Canonical page: /blog\n\n${bodies.join("\n\n---\n\n")}`
+    `Canonical page: /blog
+
+Only titles and summaries are held here, not the posts themselves. Describe what a post covers and link to it; never invent or paraphrase its contents.
+
+${entries}`
   )
 }
 
-async function buildBundle() {
+function buildBundle() {
   const sections = [
     aboutSection(),
     experienceSection(),
@@ -308,7 +288,7 @@ async function buildBundle() {
     certificationsSection(),
     testimonialsSection(),
     gearSection(),
-    await writingSection(),
+    writingSection(),
   ]
 
   return `# Reference material about ${USER.displayName}
@@ -345,8 +325,20 @@ function linkablePaths() {
   ]
 }
 
-async function main() {
-  const bundle = await buildBundle()
+/** Per-section costs, so a budget failure says which section to look at. */
+function reportSections(bundle: string) {
+  const sections = bundle.split(/^## /m).slice(1)
+
+  return sections
+    .map((section) => {
+      const [heading] = section.split("\n")
+      return { heading, tokens: estimateTokens(section) }
+    })
+    .sort((a, b) => b.tokens - a.tokens)
+}
+
+function main() {
+  const bundle = buildBundle()
   const tokens = estimateTokens(bundle)
   const paths = linkablePaths()
 
@@ -366,13 +358,19 @@ async function main() {
   )
 
   if (tokens > TOKEN_BUDGET) {
+    for (const { heading, tokens: sectionTokens } of reportSections(bundle)) {
+      console.error(
+        `[context-bundle]   ${heading.padEnd(16)} ~${sectionTokens.toLocaleString()} tokens`
+      )
+    }
     console.error(
       `[context-bundle] Over budget by ~${(tokens - TOKEN_BUDGET).toLocaleString()} tokens. ` +
-        `The bundle is resent on every turn, so this is a per-request cost. ` +
-        `Summarise or drop a section rather than raising TOKEN_BUDGET.`
+        `The bundle is resent on every turn and counts against Groq's 8,000 tokens-per-minute ` +
+        `free-tier ceiling, so exceeding it throttles or blocks every request. ` +
+        `Trim the largest section above rather than raising TOKEN_BUDGET.`
     )
     process.exit(1)
   }
 }
 
-await main()
+main()

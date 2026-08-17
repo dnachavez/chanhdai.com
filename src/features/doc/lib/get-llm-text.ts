@@ -13,21 +13,8 @@ const processor = remark()
   .use(remarkHeading)
   .use(remarkEmbedsToMarkdown)
 
-/**
- * Renders a doc body to plain Markdown, without the title/description/date
- * wrapper `getLLMText` puts around it.
- *
- * Split out for the chat context bundle, which nests post bodies under its own
- * headings and so has to supply its own frame. Sharing the processor keeps the
- * prose the bot reads byte-identical to the prose `/llms-full.txt` serves.
- */
-export async function renderDocBody(content: string) {
-  const processed = await processor.process({ value: content })
-  return String(processed.value)
-}
-
 export async function getLLMText(doc: Doc) {
-  const body = await renderDocBody(doc.content)
+  const body = String((await processor.process({ value: doc.content })).value)
 
   return `# ${doc.metadata.title}
 

@@ -11,12 +11,19 @@ export const CHAT_MODEL = "openai/gpt-oss-120b"
 export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
 
 /**
- * Turns kept in the conversation, counting both sides. The bundle is ~13k
- * tokens and is resent every turn, so history is the only part of the request
- * that grows — capping it keeps the tail of a long conversation from costing
- * several times what the head did.
+ * Turns kept in the conversation, counting both sides. The bundle is resent
+ * every turn, so history is the only part of the request that grows — and on a
+ * free tier where the whole request is charged against an 8,000 tokens-per-
+ * minute ceiling, growth directly reduces how many questions fit in a minute.
  */
-export const MAX_HISTORY_MESSAGES = 12
+export const MAX_HISTORY_MESSAGES = 6
+
+/**
+ * Caps the reply's share of the per-minute token ceiling. Long enough for the
+ * two-to-four sentence answers the system prompt asks for, short enough that
+ * one verbose reply cannot eat the budget for the next question.
+ */
+export const MAX_OUTPUT_TOKENS = 600
 
 /**
  * Assistant replies allowed per conversation. Client-supplied and therefore
@@ -50,6 +57,12 @@ export const CHAT_COPY = {
   placeholder: "Ask about my work…",
   empty: "No messages yet.",
   error: `Something broke. Email me: ${CONTACT_EMAIL}`,
+  /**
+   * Distinct from `error`: the upstream per-minute ceiling is a wait, not a
+   * fault, and telling someone to email instead of retrying loses a visitor who
+   * would have got an answer sixty seconds later.
+   */
+  busy: `Too many questions at once — give it a minute. Or email me: ${CONTACT_EMAIL}`,
   rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
   sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
   unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,
