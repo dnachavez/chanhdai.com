@@ -19,7 +19,7 @@ export const USER: User = {
   ],
   address: "Cebu City, Philippines",
   phoneNumberB64: "KzYzOTU2MzkwMTgxMw==", // E.164 format, base64 encoded (https://t.io.vn/base64-string-converter)
-  emailB64: "ZG5hLmNoYXZlekBvdXRsb29rLmNvbQ==", // base64 encoded
+  emailB64: "ZG5hY2hhdmV6LmRldkBnbWFpbC5jb20=", // base64 encoded
   website: "https://www.dnachavez.dev",
   jobTitle: "Senior Full Stack Developer",
   jobs: [

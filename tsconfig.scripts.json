@@ -7,7 +7,19 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "isolatedModules": false,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    // Four of the portfolio data modules are .tsx carrying lucide icons as JSX.
+    // Restated here rather than inherited because tsx's esbuild transform reads
+    // this file directly and defaults to the classic runtime otherwise, which
+    // fails at import time with "React is not defined".
+    "jsx": "react-jsx",
+    // tsx resolves `@/*` through this tsconfig; without an explicit baseUrl its
+    // CJS resolver fails on aliased imports reached transitively (e.g. the
+    // remark plugin that `get-llm-text.ts` pulls in).
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "./src/scripts/**/*.{ts,mts}"

@@ -8,6 +8,10 @@ const ScrollToTop = dynamic(() =>
   import("@/components/scroll-to-top").then((mod) => mod.ScrollToTop)
 )
 
+const ChatLauncher = dynamic(
+  () => import("@/features/chat/components/chat-launcher")
+)
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     // References:
@@ -26,6 +30,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <SiteBottomNav />
       <ScrollToTop />
+      {/*
+        Mounted after the bottom fade so the launcher paints above it. Both sit
+        at z-50; the fade is pointer-events-none, so only stacking order matters.
+      */}
+      <ChatLauncher />
     </div>
   )
 }

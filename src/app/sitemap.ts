@@ -33,6 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(latestPostUpdate).toISOString(),
       }),
     },
+    { url: `${SITE_INFO.url}/chat` },
     { url: `${SITE_INFO.url}/experience` },
     { url: `${SITE_INFO.url}/projects` },
     { url: `${SITE_INFO.url}/testimonials` },

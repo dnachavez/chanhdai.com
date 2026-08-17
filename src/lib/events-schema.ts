@@ -12,6 +12,8 @@ export const eventSchema = z.object({
     "command_menu_search",
     "command_menu_action",
     "blog_search",
+    "chat_open",
+    "chat_question",
     "toc_inline_toggle",
     "toc_inline_item_click",
     "toc_minimap_hover",

@@ -30,7 +30,13 @@ export function ScrollToTop({
       data-scroll-direction={scrollDirection}
       className={cn(
         "[--bottom:0.5rem] sm:[--bottom:1rem] lg:[--bottom:2rem]",
-        "fixed right-4 bottom-[calc(var(--bottom,0.5rem)+env(safe-area-inset-bottom,0))] z-50 lg:right-8",
+        /**
+         * Stacked above the chat launcher, which now owns the corner slot this
+         * button used to occupy. The offset is the launcher's height plus a
+         * gutter; keep the two in step if either size changes.
+         */
+        "[--chat-launcher-clearance:--spacing(13)]",
+        "fixed right-4 bottom-[calc(var(--bottom,0.5rem)+var(--chat-launcher-clearance)+env(safe-area-inset-bottom,0))] z-50 lg:right-8",
         "transition-[background-color,opacity] duration-300 data-[scroll-direction=down]:opacity-30 data-[scroll-direction=up]:opacity-100 data-[visible=false]:opacity-0",
         "data-[scroll-direction=down]:hover:opacity-100",
         "border-none",
