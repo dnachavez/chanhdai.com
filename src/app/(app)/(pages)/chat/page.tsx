@@ -8,7 +8,7 @@ import {
   PageHeadingBackLink,
   PageHeadingTitle,
 } from "@/components/page-heading"
-import { ChatConversation } from "@/features/chat/components/chat-conversation"
+import { ChatConversationClient } from "@/features/chat/components/chat-conversation-client"
 
 const title = "Chat"
 const description =
@@ -77,7 +77,7 @@ export default function Page() {
           height the region is comfortable on a laptop and the page simply
           scrolls on anything shorter.
         */}
-        <ChatConversation className="h-[32rem]" />
+        <ChatConversationClient className="h-[32rem]" />
 
         {/*
           The bottom fade in the app layout is `fixed`, so it covers the last

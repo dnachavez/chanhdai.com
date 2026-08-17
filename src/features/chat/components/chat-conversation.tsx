@@ -1,22 +1,21 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
-import { ArrowUpIcon, SquareIcon } from "lucide-react"
+import { useEffect, useMemo, useRef } from "react"
+import type { UIMessage } from "ai"
 
-import { trackEvent } from "@/lib/events"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/base/ui/button"
 
-import {
-  CHAT_COPY,
-  CONTACT_EMAIL,
-  MAX_MESSAGE_LENGTH,
-  MAX_TURNS_PER_SESSION,
-  STARTER_QUESTIONS,
-} from "../config"
+import { CHAT_COPY, CONTACT_EMAIL } from "../config"
+import { ChatComposer } from "./chat-composer"
 import { ChatMarkdown } from "./chat-markdown"
+import { useChatConversation } from "./chat-provider"
+import {
+  ChatSuggestions,
+  readHighlights,
+  readSuggestions,
+  useOpeners,
+} from "./chat-suggestions"
+import { ChatThinking, ChatThinkingPlaceholder } from "./chat-thinking"
 
 /**
  * The route replies to every failure with `{ error }`, so the useful message is
@@ -36,22 +35,51 @@ function readError(error: Error | undefined) {
   return CHAT_COPY.error
 }
 
-export function ChatConversation({ className }: { className?: string }) {
-  const { messages, sendMessage, status, error, stop } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  })
+function textOf(message: UIMessage) {
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => ("text" in part ? part.text : ""))
+    .join("")
+}
 
-  const [input, setInput] = useState("")
+/** Copy that ends at an address, rendered with the address as a real link. */
+function Notice({ copy }: { copy: string }) {
+  return (
+    <p className="font-mono text-sm text-muted-foreground">
+      {copy.replace(CONTACT_EMAIL, "").trim()}{" "}
+      <a className="text-foreground link" href={`mailto:${CONTACT_EMAIL}`}>
+        {CONTACT_EMAIL}
+      </a>
+    </p>
+  )
+}
+
+export function ChatConversation({ className }: { className?: string }) {
+  const {
+    messages,
+    error,
+    isBusy,
+    isSessionOver,
+    asked,
+    input,
+    setInput,
+    send,
+    stop,
+  } = useChatConversation()
+
+  /**
+   * The assistant message does not exist until the first chunk lands, so between
+   * pressing send and the stream opening there is nothing in `messages` to hang
+   * a status on. Rendered here instead, which is what makes "Thinking…" appear
+   * immediately rather than after the first round trip.
+   */
+  const isAwaitingReply =
+    isBusy && messages[messages.length - 1]?.role === "user"
+
   const listRef = useRef<HTMLDivElement>(null)
 
-  const isBusy = status === "submitted" || status === "streaming"
-
-  const assistantTurns = messages.filter(
-    (message) => message.role === "assistant"
-  ).length
-
-  const isSessionOver = assistantTurns >= MAX_TURNS_PER_SESSION
   const errorMessage = readError(error)
+  const openers = useOpeners(asked)
 
   /**
    * Anchored to the bottom while answers stream in. `scrollTop` rather than
@@ -73,108 +101,81 @@ export function ChatConversation({ className }: { className?: string }) {
     if (errorMessage) return errorMessage
 
     const last = messages[messages.length - 1]
-    if (last?.role !== "assistant") return ""
-
-    return last.parts
-      .filter((part) => part.type === "text")
-      .map((part) => ("text" in part ? part.text : ""))
-      .join("")
+    return last?.role === "assistant" ? textOf(last) : ""
   }, [messages, isBusy, errorMessage])
 
-  const submit = (text: string) => {
-    const trimmed = text.trim()
-    if (!trimmed || isBusy || isSessionOver) return
+  const lastMessage = messages[messages.length - 1]
 
-    trackEvent({
-      name: "chat_question",
-      properties: { question: trimmed, question_length: trimmed.length },
-    })
+  /**
+   * Chips hang off the finished answer, so they appear once and only under the
+   * turn that produced them. Falls back to openers for turns with no retrieved
+   * entries — a greeting has nothing to derive follow-ups from, and offering
+   * nothing there dead-ends the conversation.
+   */
+  const followUps = useMemo(() => {
+    if (isBusy || errorMessage || isSessionOver) return []
+    if (lastMessage?.role !== "assistant") return []
 
-    void sendMessage({ text: trimmed })
-    setInput("")
-  }
+    const suggestions = readSuggestions(lastMessage.metadata)
+    return suggestions.length > 0 ? suggestions : openers.slice(0, 2)
+  }, [isBusy, errorMessage, isSessionOver, lastMessage, openers])
 
   return (
-    <div className={cn("flex min-h-0 flex-col", className)}>
+    <div data-chat-ui className={cn("flex min-h-0 flex-col", className)}>
       <div
         ref={listRef}
         role="log"
         className="flex-1 space-y-4 overflow-y-auto overscroll-contain p-4"
       >
         {messages.length === 0 && !errorMessage && (
-          <div className="space-y-4">
-            <p className="font-mono text-sm text-muted-foreground">
-              {CHAT_COPY.empty}
-            </p>
-
-            <ul className="flex flex-wrap gap-1.5">
-              {STARTER_QUESTIONS.map((question) => (
-                <li key={question} className="flex">
-                  <button
-                    type="button"
-                    className="tag-base cursor-pointer text-left transition-[background-color,color] ease-out hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                    onClick={() => submit(question)}
-                  >
-                    {question}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ChatSuggestions
+            questions={openers}
+            onSelect={send}
+            disabled={isSessionOver}
+          />
         )}
 
         {messages.map((message) => {
-          const text = message.parts
-            .filter((part) => part.type === "text")
-            .map((part) => ("text" in part ? part.text : ""))
-            .join("")
-
           if (message.role === "user") {
             return (
               <div key={message.id} className="flex justify-end">
-                <p className="max-w-[85%] rounded-xl bg-muted px-3 py-2 text-sm wrap-break-word whitespace-pre-wrap">
-                  {text}
-                </p>
+                <div className="prose prose-sm max-w-[85%] prose-ncdai rounded-xl bg-muted px-3 py-2 text-sm wrap-break-word prose-zinc dark:prose-invert prose-p:first:mt-0 prose-p:last:mb-0">
+                  <ChatMarkdown>{textOf(message)}</ChatMarkdown>
+                </div>
               </div>
             )
           }
 
           return (
-            <div
-              key={message.id}
-              className="prose prose-sm max-w-none prose-ncdai text-sm prose-zinc dark:prose-invert prose-p:first:mt-0 prose-p:last:mb-0"
-            >
-              <ChatMarkdown>{text}</ChatMarkdown>
+            <div key={message.id} className="space-y-1.5">
+              <ChatThinking
+                message={message}
+                isLive={isBusy && message.id === lastMessage?.id}
+              />
+
+              <div className="prose prose-sm max-w-none prose-ncdai text-sm prose-zinc dark:prose-invert prose-p:first:mt-0 prose-p:last:mb-0">
+                <ChatMarkdown highlights={readHighlights(message.metadata)}>
+                  {textOf(message)}
+                </ChatMarkdown>
+              </div>
             </div>
           )
         })}
 
-        {status === "submitted" && (
-          <p className="font-mono text-sm text-muted-foreground">Thinking…</p>
+        {isAwaitingReply && <ChatThinkingPlaceholder />}
+
+        {/*
+          Rendered outside the message list so it is never mistaken for part of
+          the answer, and so it disappears the moment the next question is sent.
+        */}
+        {followUps.length > 0 && (
+          <ChatSuggestions questions={followUps} onSelect={send} />
         )}
 
-        {errorMessage && (
-          <p className="font-mono text-sm text-muted-foreground">
-            {errorMessage.replace(CONTACT_EMAIL, "").trim()}{" "}
-            <a
-              className="text-foreground link"
-              href={`mailto:${CONTACT_EMAIL}`}
-            >
-              {CONTACT_EMAIL}
-            </a>
-          </p>
-        )}
+        {errorMessage && <Notice copy={errorMessage} />}
 
         {isSessionOver && !errorMessage && (
-          <p className="font-mono text-sm text-muted-foreground">
-            {CHAT_COPY.sessionEnded.replace(CONTACT_EMAIL, "").trim()}{" "}
-            <a
-              className="text-foreground link"
-              href={`mailto:${CONTACT_EMAIL}`}
-            >
-              {CONTACT_EMAIL}
-            </a>
-          </p>
+          <Notice copy={CHAT_COPY.sessionEnded} />
         )}
       </div>
 
@@ -182,61 +183,14 @@ export function ChatConversation({ className }: { className?: string }) {
         {announcement}
       </div>
 
-      <form
-        className="screen-line-top flex items-end gap-2 p-2"
-        onSubmit={(event) => {
-          event.preventDefault()
-          submit(input)
-        }}
-      >
-        <label className="sr-only" htmlFor="chat-input">
-          {CHAT_COPY.placeholder}
-        </label>
-
-        <textarea
-          id="chat-input"
-          rows={1}
-          value={input}
-          disabled={isSessionOver}
-          maxLength={MAX_MESSAGE_LENGTH}
-          placeholder={CHAT_COPY.placeholder}
-          className="field-sizing-content max-h-32 min-h-9 flex-1 resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter sends; Shift+Enter is a newline. Left alone while an IME is
-            // composing, where Enter commits the candidate rather than the message.
-            if (
-              event.key === "Enter" &&
-              !event.shiftKey &&
-              !event.nativeEvent.isComposing
-            ) {
-              event.preventDefault()
-              submit(input)
-            }
-          }}
-        />
-
-        {isBusy ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon-sm"
-            aria-label="Stop generating"
-            onClick={() => stop()}
-          >
-            <SquareIcon />
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            size="icon-sm"
-            aria-label="Send message"
-            disabled={!input.trim() || isSessionOver}
-          >
-            <ArrowUpIcon />
-          </Button>
-        )}
-      </form>
+      <ChatComposer
+        value={input}
+        onChange={setInput}
+        onSubmit={() => send(input)}
+        onStop={stop}
+        isBusy={isBusy}
+        disabled={isSessionOver}
+      />
     </div>
   )
 }

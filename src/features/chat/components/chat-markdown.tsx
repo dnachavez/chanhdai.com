@@ -5,8 +5,14 @@ import Link from "next/link"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
-import { LINKABLE_PATHS } from "@/generated/context-bundle"
+import { LINKABLE_PATHS } from "@/generated/chat-client"
 
+import { inlineCitations } from "../lib/inline-citations"
+import {
+  applyDerivedHighlight,
+  highlightFromLinkText,
+  normalizeLinkBrackets,
+} from "../lib/normalize-links"
 import { stripReasoningArtifacts } from "../lib/strip-reasoning"
 
 /**
@@ -54,8 +60,47 @@ function isSafeExternal(href: string) {
   }
 }
 
-export function ChatMarkdown({ children }: { children: string }) {
-  const text = stripReasoningArtifacts(children)
+/**
+ * Flattens a link's rendered children back to text, so its length can be judged.
+ * Markdown gives these as nodes — `**bold**` inside link text is an element, not
+ * a string — so a plain `String(children)` would measure "[object Object]".
+ */
+function plainText(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  if (Array.isArray(node)) {
+    return node.map((child) => plainText(child as React.ReactNode)).join("")
+  }
+
+  if (
+    typeof node === "object" &&
+    node !== null &&
+    "props" in node &&
+    typeof node.props === "object" &&
+    node.props !== null &&
+    "children" in node.props
+  ) {
+    return plainText(node.props.children as React.ReactNode)
+  }
+
+  return ""
+}
+
+export function ChatMarkdown({
+  children,
+  highlights,
+}: {
+  children: string
+  /**
+   * Passage to highlight per entry url, derived server-side from what the answer
+   * actually reused. Absent while the message is still streaming, and applied
+   * only to links the model did not annotate itself.
+   */
+  highlights?: Record<string, string>
+}) {
+  const text = inlineCitations(
+    normalizeLinkBrackets(stripReasoningArtifacts(children)),
+    highlights
+  )
 
   if (!text) return null
 
@@ -68,11 +113,16 @@ export function ChatMarkdown({ children }: { children: string }) {
 
           const internal = resolveInternalPath(href)
           if (internal) {
+            const resolved = applyDerivedHighlight(
+              highlightFromLinkText(internal, plainText(children)),
+              highlights
+            )
+
             // Cast is safe here and nowhere else: `typedRoutes` cannot verify a
             // string produced at runtime, but this one matched the build-time
             // list of routes the site serves.
             return (
-              <Link className="link-underline" href={internal as Route}>
+              <Link className="link-underline" href={resolved as Route}>
                 {children}
               </Link>
             )

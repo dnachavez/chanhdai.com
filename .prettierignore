@@ -4,6 +4,6 @@
 node_modules
 public
 
-# Written by `pnpm build:context`. Committed so the bundle the bot reads is
+# Written by `pnpm build:chat-corpus`. Committed so the corpus the bot reads is
 # reviewable in a diff, but formatting it would only create noise.
 src/generated

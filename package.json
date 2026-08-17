@@ -22,8 +22,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm build:context && next build",
-    "build:context": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx --import ./src/scripts/react-global.mjs src/scripts/build-context-bundle.mts",
+    "build": "pnpm build:chat-corpus && next build",
+    "build:chat-corpus": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx --import ./src/scripts/react-global.mjs src/scripts/build-chat-corpus.mts",
     "start": "next start",
     "preview": "pnpm build && next start",
     "test": "vitest",
