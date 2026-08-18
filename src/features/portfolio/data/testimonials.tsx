@@ -38,6 +38,15 @@ export const TESTIMONIALS_1: Testimonial[] = [
       "Dan was our go to full stack engineer on Tolstoy and Framework, and he was especially strong on the AI side. He could take a rough idea, figure out the right approach, and ship something that actually worked in production, not just in a demo. He understands both the model layer and the product around it, which is rarer than people think. On top of that he was reliable and easy to work with. Clear communication, no ego, took feedback well, and kept things moving. I'd work with him again without hesitation.",
     date: "2026-08-16",
   },
+  {
+    authorAvatar: "/images/testimonials/dov-kaufmann.webp",
+    authorName: "Dov Kaufmann",
+    authorTagline: "CEO · Tolstoy & Framework",
+    url: "https://www.gotolstoy.com",
+    quote:
+      "Dan brought professionalism, sharp thinking, and a genuinely collaborative spirit to the project. He was dependable, effective, and consistently added value to the team. I enjoyed working with him and recommend him with confidence.",
+    date: "2026-08-18",
+  },
 ]
 
 // Short quotes (50 characters or fewer), ordered by date ascending
