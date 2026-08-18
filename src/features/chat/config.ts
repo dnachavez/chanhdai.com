@@ -28,13 +28,17 @@ export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
  * full day of outage at the site's ceiling of ~330 turns is about $2.50 against
  * a $10 balance that free models never touch.
  *
- * Chosen on measurement rather than price: run against this system prompt it
- * searched before declining a question about an employer that does not exist,
- * and linked `/experience#position-framework-1` rather than a vaguer anchor.
- * `openai/gpt-oss-120b` is cheaper and was rejected for the opposite behaviour,
- * which is the same reason `gpt-oss-20b` lost the original comparison. Measured
- * against these weights served by Groq, not by OpenRouter, so the host differs
- * even though the model does not.
+ * Chosen on measurement rather than price, run against this system prompt
+ * through OpenRouter itself. It searched on all three probes including the one
+ * about an employer that does not exist, and linked
+ * `/experience#position-framework-1` rather than a vaguer anchor.
+ *
+ * `openai/gpt-oss-120b` is half the price and was rejected for the opposite
+ * behaviour on the same probes: it called no tool at all for the employer that
+ * does not exist, answering from priors, and wrapped a link in the full-width
+ * brackets `normalize-links.ts` exists to repair. That is the third measurement
+ * of that family failing this prompt, after `gpt-oss-20b` lost the original
+ * comparison and `gpt-oss-120b` did the same when checked on Groq.
  */
 export const FALLBACK_MODEL = "qwen/qwen3.6-27b"
 
