@@ -12,25 +12,35 @@ import { USER } from "@/features/portfolio/data/user"
 export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 /**
- * Tried in order when the primary cannot be served, via OpenRouter's `models`
- * parameter — one request, routed onward server-side, so a healthy day still
- * costs three requests a turn.
+ * The one model tried if Nemotron cannot be served, via OpenRouter's `models`
+ * parameter — routed onward server-side inside the same request.
  *
- * This exists because exactly one provider serves the primary. OpenRouter's
- * usual answer to an outage is to route the same model to a different host, and
- * for a `:free` model with a single host there is nowhere to go: a 502 from
- * Nvidia is the end of the turn. Retrying does not help either, since the AI SDK
- * would retry the same dead endpoint. Only a different *model* is a real
- * fallback.
+ * Paid, and that is the entire point. Exactly one provider serves Nemotron, so
+ * OpenRouter's usual answer to an outage — route the same model to another host
+ * — has nowhere to go, and the SDK's retries only reach the same dead endpoint.
+ * A `:free` fallback does not help either: the daily allowance and the
+ * per-minute ceiling are both account-wide across every `:free` model, so a
+ * refused request is refused again by the alternates. Only a model on a
+ * different meter is a real fallback.
  *
- * Both were checked against this prompt and can drive `search` and `read`.
- * gpt-oss-20b is second despite being smaller because it is the family the
- * Harmony sanitiser in `strip-reasoning.ts` was written for.
+ * Costs nothing on a healthy day, because OpenRouter never reaches it while the
+ * primary answers. At ~9k tokens a turn it is ~$0.0076 when it does, so even a
+ * full day of outage at the site's ceiling of ~330 turns is about $2.50 against
+ * a $10 balance that free models never touch.
+ *
+ * Chosen on measurement rather than price, run against this system prompt
+ * through OpenRouter itself. It searched on all three probes including the one
+ * about an employer that does not exist, and linked
+ * `/experience#position-framework-1` rather than a vaguer anchor.
+ *
+ * `openai/gpt-oss-120b` is half the price and was rejected for the opposite
+ * behaviour on the same probes: it called no tool at all for the employer that
+ * does not exist, answering from priors, and wrapped a link in the full-width
+ * brackets `normalize-links.ts` exists to repair. That is the third measurement
+ * of that family failing this prompt, after `gpt-oss-20b` lost the original
+ * comparison and `gpt-oss-120b` did the same when checked on Groq.
  */
-export const FALLBACK_MODELS = [
-  "openai/gpt-oss-20b:free",
-  "google/gemma-4-31b-it:free",
-] as const
+export const FALLBACK_MODEL = "qwen/qwen3.6-27b"
 
 /**
  * Read from the same encoded value the Overview panel reveals, so the address
@@ -42,9 +52,11 @@ export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
  * Budget
  *
  * OpenRouter meters `:free` models by *requests*, not tokens: 20 per minute and
- * 50 per day, the daily figure rising to 1,000 once the account has ever bought
- * $10 of credit. That is a different constraint from the one this feature was
- * built against, and it inverts which numbers matter.
+ * 1,000 per day, the daily figure being what the account's one-off $10 credit
+ * purchase unlocked — the threshold is measured on credit bought all time, not
+ * on a balance, and `:free` models draw none of it down, so it does not lapse.
+ * That is a different constraint from the one this feature was built against,
+ * and it inverts which numbers matter.
  *
  * Groq's free tier was 8,000 tokens per minute counting input and output
  * together, which made every token in the payload expensive and made a single
@@ -53,14 +65,22 @@ export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
  * caps below are set for answer quality rather than to squeeze under a ceiling.
  *
  * What is scarce now is the turn itself. A turn that searches and reads costs
- * three requests, so 50 a day is roughly **16 conversations**, and one visitor
- * can exhaust the site's daily allowance. Two consequences:
+ * three requests, so 1,000 a day is roughly **330 conversations** — enough that
+ * the daily cap is no longer the binding limit. The 20 a minute is: about six
+ * turns a minute, across every visitor at once.
  *
- * - The per-IP limiter matters more than it used to. It is the only thing
- *   between one enthusiastic visitor and everyone else's access.
- * - Buying $10 of credit once raises the cap to 1,000 requests a day (~330
- *   turns) without changing a line of this file. That is the cheapest available
- *   fix if the limit is ever actually reached.
+ * The per-IP limiter is what keeps that minute from belonging to one person.
+ * It matters more than the daily figure now, not less.
+ *
+ * `FALLBACK_MODEL` sits outside all of this. It is paid, so it is metered by
+ * balance rather than by either ceiling — which is what makes it useful when
+ * the ceilings are exactly the problem.
+ *
+ * Measured against the alternatives before settling here: Groq's free tier caps
+ * tokens rather than requests and could not fit one turn under 8k a minute;
+ * Gemini's allows five requests a minute, which is under two turns; and both
+ * Together and the paid tiers spend a balance per token rather than unlocking a
+ * ceiling once.
  * -------------------------------------------------------------------------- */
 
 /**

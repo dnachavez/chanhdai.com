@@ -10,7 +10,7 @@ import { z } from "zod"
 import {
   CHAT_COPY,
   CHAT_MODEL,
-  FALLBACK_MODELS,
+  FALLBACK_MODEL,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
   MAX_OUTPUT_TOKENS,
@@ -193,8 +193,9 @@ export async function POST(request: Request) {
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     /**
-     * OpenRouter tries these in order if the primary cannot be served, within
-     * the same request.
+     * Fallback for the case retrying cannot fix: the single host behind the
+     * primary is down. OpenRouter tries these in order within the one request,
+     * so a healthy turn still costs three and never reaches the paid model.
      *
      * `models` sits directly on the provider options, not under an `extraBody`
      * wrapper: `@openrouter/ai-sdk-provider` spreads this object straight into
@@ -202,11 +203,11 @@ export async function POST(request: Request) {
      * `extraBody` field while `models` itself stays undefined. That is what this
      * route did for its first release, silently — the AI SDK types
      * `providerOptions` as a loose record, so nothing rejected the wrapper, and
-     * the whole fallback list was dead. Found in a 429 log that printed the
+     * the fallback was dead the whole time. Found in a 429 log that printed the
      * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: { models: [CHAT_MODEL, ...FALLBACK_MODELS] },
+      openrouter: { models: [CHAT_MODEL, FALLBACK_MODEL] },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
@@ -249,6 +250,11 @@ export async function POST(request: Request) {
      * Order is load-bearing. An exhausted daily allowance is also a 429, so
      * `isUpstreamRateLimit` matches it too; asking it second is what keeps the
      * broader predicate from claiming the narrower case.
+     *
+     * `upstream` now means both hosts failed, not one. `FALLBACK_MODEL` covers
+     * the single-provider outage, so reaching this branch says the paid model
+     * did not answer either — an OpenRouter-wide problem rather than Nvidia
+     * having a bad afternoon.
      */
     onError: (error) => {
       if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted
