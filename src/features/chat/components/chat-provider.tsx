@@ -1,5 +1,11 @@
 "use client"
 
+/**
+ * First, and before `@ai-sdk/react`: it builds zod v4 schemas at module scope,
+ * and this is what stops that from tripping the CSP. See the module for why.
+ */
+import "../lib/zod-jitless"
+
 import {
   createContext,
   useCallback,
