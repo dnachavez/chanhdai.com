@@ -23,6 +23,7 @@ import { suggestionsFrom } from "@/features/chat/lib/suggest-follow-ups"
 import { buildSystemPrompt } from "@/features/chat/lib/system-prompt"
 import { createChatTools } from "@/features/chat/lib/tools"
 import {
+  isUpstreamQuotaExhausted,
   isUpstreamRateLimit,
   isUpstreamUnavailable,
 } from "@/features/chat/lib/upstream-errors"
@@ -193,11 +194,19 @@ export async function POST(request: Request) {
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     /**
      * OpenRouter tries these in order if the primary cannot be served, within
-     * the same request. Passed through `extraBody` because it is an OpenRouter
-     * routing concern rather than part of the AI SDK's model contract.
+     * the same request.
+     *
+     * `models` sits directly on the provider options, not under an `extraBody`
+     * wrapper: `@openrouter/ai-sdk-provider` spreads this object straight into
+     * the request body, so a wrapper key is sent verbatim as an unrecognised
+     * `extraBody` field while `models` itself stays undefined. That is what this
+     * route did for its first release, silently — the AI SDK types
+     * `providerOptions` as a loose record, so nothing rejected the wrapper, and
+     * the whole fallback list was dead. Found in a 429 log that printed the
+     * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: { extraBody: { models: [CHAT_MODEL, ...FALLBACK_MODELS] } },
+      openrouter: { models: [CHAT_MODEL, ...FALLBACK_MODELS] },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
@@ -233,11 +242,16 @@ export async function POST(request: Request) {
           }
         : undefined,
     /**
-     * Never surface provider internals; the visitor gets our copy instead. Three
-     * outcomes, because they call for three different things from the reader:
-     * wait a minute, try again later, or give up and email.
+     * Never surface provider internals; the visitor gets our copy instead. Four
+     * outcomes, because they call for four different things from the reader:
+     * come back tomorrow, wait a minute, try again later, or give up and email.
+     *
+     * Order is load-bearing. An exhausted daily allowance is also a 429, so
+     * `isUpstreamRateLimit` matches it too; asking it second is what keeps the
+     * broader predicate from claiming the narrower case.
      */
     onError: (error) => {
+      if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted
       if (isUpstreamRateLimit(error)) return CHAT_COPY.busy
       if (isUpstreamUnavailable(error)) return CHAT_COPY.upstream
       return CHAT_COPY.error

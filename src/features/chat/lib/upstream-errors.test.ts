@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { isUpstreamRateLimit, isUpstreamUnavailable } from "./upstream-errors"
+import {
+  isUpstreamQuotaExhausted,
+  isUpstreamRateLimit,
+  isUpstreamUnavailable,
+} from "./upstream-errors"
 
 /**
  * The nested shapes here are ones the AI SDK actually threw: a `RetryError`
@@ -115,5 +119,116 @@ describe("isUpstreamUnavailable", () => {
     const cyclic: Record<string, unknown> = { statusCode: 400 }
     cyclic.lastError = cyclic
     expect(() => isUpstreamUnavailable(cyclic)).not.toThrow()
+  })
+})
+
+/**
+ * The shape OpenRouter returned when the 50-request free-model day ran out,
+ * copied from the production log rather than written from the docs: an
+ * `AI_RetryError` wrapping three identical `AI_APICallError`s, each carrying the
+ * parsed body on `data`. The SDK retried because a 429 is nominally retryable,
+ * which is exactly why the daily case has to be told apart from the per-minute
+ * one after the fact.
+ */
+function dailyQuotaError() {
+  const message =
+    "Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day"
+
+  const call = () => ({
+    name: "AI_APICallError",
+    message,
+    statusCode: 429,
+    isRetryable: true,
+    data: {
+      error: {
+        message,
+        code: 429,
+        metadata: { limit_source: "openrouter_free_tier_daily" },
+      },
+    },
+  })
+
+  return {
+    name: "AI_RetryError",
+    reason: "maxRetriesExceeded",
+    lastError: call(),
+    errors: [call(), call(), call()],
+  }
+}
+
+describe("isUpstreamQuotaExhausted", () => {
+  it("matches the daily cap as the SDK actually threw it", () => {
+    expect(isUpstreamQuotaExhausted(dailyQuotaError())).toBe(true)
+  })
+
+  it("matches on limit_source alone", () => {
+    expect(
+      isUpstreamQuotaExhausted({
+        statusCode: 429,
+        data: {
+          error: { metadata: { limit_source: "openrouter_free_tier_daily" } },
+        },
+      })
+    ).toBe(true)
+  })
+
+  it("matches on the message alone, for a body it cannot parse", () => {
+    expect(
+      isUpstreamQuotaExhausted({
+        statusCode: 429,
+        message: "Rate limit exceeded: free-models-per-day.",
+      })
+    ).toBe(true)
+  })
+
+  /**
+   * The distinction the copy rests on: one clears in a minute, the other at
+   * midnight UTC. A per-minute throttle carries neither marker.
+   */
+  it("does not match the per-minute throttle", () => {
+    expect(
+      isUpstreamQuotaExhausted({
+        statusCode: 429,
+        message: "Rate limit exceeded: free-models-per-min",
+        data: {
+          error: { metadata: { limit_source: "openrouter_free_tier_minute" } },
+        },
+      })
+    ).toBe(false)
+  })
+
+  it("does not match a daily marker on a status that is not a throttle", () => {
+    expect(
+      isUpstreamQuotaExhausted({
+        statusCode: 500,
+        data: {
+          error: { metadata: { limit_source: "openrouter_free_tier_daily" } },
+        },
+      })
+    ).toBe(false)
+  })
+
+  it("does not match a plain throttle carrying no explanation", () => {
+    expect(isUpstreamQuotaExhausted({ statusCode: 429 })).toBe(false)
+  })
+
+  it("handles non-objects and cycles without throwing", () => {
+    expect(isUpstreamQuotaExhausted(null)).toBe(false)
+    expect(isUpstreamQuotaExhausted("free-models-per-day")).toBe(false)
+
+    const cyclic: Record<string, unknown> = { statusCode: 429 }
+    cyclic.lastError = cyclic
+    expect(() => isUpstreamQuotaExhausted(cyclic)).not.toThrow()
+  })
+
+  /**
+   * `onError` asks the narrow predicate first precisely because the broad one
+   * also matches; this pins that overlap so a future reorder fails here rather
+   * than silently telling a visitor to wait a minute for nine hours.
+   */
+  it("overlaps isUpstreamRateLimit, which is why order matters at the call site", () => {
+    const error = dailyQuotaError()
+    expect(isUpstreamRateLimit(error)).toBe(true)
+    expect(isUpstreamUnavailable(error)).toBe(false)
   })
 })
