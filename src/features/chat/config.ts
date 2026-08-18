@@ -146,6 +146,14 @@ export const CHAT_COPY = {
    * a bug report for someone else's outage.
    */
   upstream: `The model is having a moment. Try again in a bit, or email me: ${CONTACT_EMAIL}`,
+  /**
+   * Distinct from `busy`, which is the same 429 from the same provider: the
+   * per-minute throttle clears in a minute, the free-model daily allowance does
+   * not clear until midnight UTC. "Give it a minute" is actively misleading for
+   * most of the day, and a visitor who takes it at its word retries into the
+   * same wall until they give up on the site rather than on the hour.
+   */
+  exhausted: `I'm out of answers for today — the allowance resets at midnight UTC. Email me instead: ${CONTACT_EMAIL}`,
   rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
   sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
   unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,
