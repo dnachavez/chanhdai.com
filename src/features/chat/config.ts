@@ -12,6 +12,33 @@ import { USER } from "@/features/portfolio/data/user"
 export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 /**
+ * The one model tried if Nemotron cannot be served, via OpenRouter's `models`
+ * parameter — routed onward server-side inside the same request.
+ *
+ * Paid, and that is the entire point. Exactly one provider serves Nemotron, so
+ * OpenRouter's usual answer to an outage — route the same model to another host
+ * — has nowhere to go, and the SDK's retries only reach the same dead endpoint.
+ * A `:free` fallback does not help either: the daily allowance and the
+ * per-minute ceiling are both account-wide across every `:free` model, so a
+ * refused request is refused again by the alternates. Only a model on a
+ * different meter is a real fallback.
+ *
+ * Costs nothing on a healthy day, because OpenRouter never reaches it while the
+ * primary answers. At ~9k tokens a turn it is ~$0.0076 when it does, so even a
+ * full day of outage at the site's ceiling of ~330 turns is about $2.50 against
+ * a $10 balance that free models never touch.
+ *
+ * Chosen on measurement rather than price: run against this system prompt it
+ * searched before declining a question about an employer that does not exist,
+ * and linked `/experience#position-framework-1` rather than a vaguer anchor.
+ * `openai/gpt-oss-120b` is cheaper and was rejected for the opposite behaviour,
+ * which is the same reason `gpt-oss-20b` lost the original comparison. Measured
+ * against these weights served by Groq, not by OpenRouter, so the host differs
+ * even though the model does not.
+ */
+export const FALLBACK_MODEL = "qwen/qwen3.6-27b"
+
+/**
  * Read from the same encoded value the Overview panel reveals, so the address
  * the bot hands out and the address the page shows can never drift apart.
  */
@@ -35,11 +62,15 @@ export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
  *
  * What is scarce now is the turn itself. A turn that searches and reads costs
  * three requests, so 1,000 a day is roughly **330 conversations** — enough that
- * the daily cap is no longer the binding limit. The 20 requests a minute is:
- * about six turns a minute across every visitor at once.
+ * the daily cap is no longer the binding limit. The 20 a minute is: about six
+ * turns a minute, across every visitor at once.
  *
  * The per-IP limiter is what keeps that minute from belonging to one person.
  * It matters more than the daily figure now, not less.
+ *
+ * `FALLBACK_MODEL` sits outside all of this. It is paid, so it is metered by
+ * balance rather than by either ceiling — which is what makes it useful when
+ * the ceilings are exactly the problem.
  *
  * Measured against the alternatives before settling here: Groq's free tier caps
  * tokens rather than requests and could not fit one turn under 8k a minute;
