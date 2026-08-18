@@ -1,12 +1,13 @@
 /**
  * Removes chain-of-thought that leaked into the visible answer.
  *
- * gpt-oss models emit Harmony-format channels, and Groq is supposed to keep the
- * `analysis` channel out of `content` and expose it separately. In practice
- * there are standing reports of reasoning surfacing in the content stream
- * anyway. `sendReasoning: false` on the server and part-type filtering on the
- * client both assume the provider labelled things correctly; this function is
- * what catches the case where it did not.
+ * Reasoning models are supposed to keep their thinking out of `content` and
+ * expose it on a separate channel. In practice there are standing reports of it
+ * surfacing in the content stream anyway — as Harmony channel markers from
+ * gpt-oss, or as `<think>` blocks from most others. `sendReasoning: false` on
+ * the server and part-type filtering on the client both assume the provider
+ * labelled things correctly; this function is what catches the case where it
+ * did not, whichever model is behind it.
  *
  * Runs against the full accumulated text on each render rather than per chunk,
  * so a marker split across two chunks is still matched once both have arrived.

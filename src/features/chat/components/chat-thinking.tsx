@@ -12,64 +12,23 @@ import {
   CollapsibleTrigger,
 } from "@/components/base/ui/collapsible"
 
-import type { LookupResult } from "../lib/tools"
+import { describeActivity, isActivityPart } from "../lib/describe-activity"
+import { isThinkingOpen } from "../lib/thinking-open-state"
 
 /**
  * What the assistant is doing, while it is doing it.
  *
- * Shows the work — which entries are being searched for and read — and not the
- * model's raw reasoning channel. At low reasoning effort that channel is terse
- * machine notes ("Need lookup experience-aeva-1."), which reads as debug output
- * rather than as a thought process, and waiting for it to stream was also what
- * delayed the panel appearing at all. The server no longer forwards it.
+ * Shows the work — searching, then reading what the search turned up — and not
+ * the model's raw reasoning channel. At low reasoning effort that channel is
+ * terse machine notes ("Need lookup experience-aeva-1."), which reads as debug
+ * output rather than as a thought process, and waiting for it to stream was also
+ * what delayed the panel appearing at all. The server no longer forwards it.
  *
- * Opens itself as soon as there is something to show and never closes itself
- * again: a panel that collapses the moment the answer starts pulls the thing the
- * visitor was reading out from under them.
+ * Opens while the search and read are running and closes itself once the first
+ * token of the answer arrives — at which point the answer is what the visitor
+ * wants to read, and the steps that produced it are a record to reopen rather
+ * than a thing in the way. See `isThinkingOpen`.
  */
-
-type ToolPart = {
-  type: string
-  state: string
-  input?: { query?: string; ids?: string[] }
-  output?: LookupResult
-  errorText?: string
-}
-
-function isLookupPart(
-  part: UIMessage["parts"][number]
-): part is ToolPart & UIMessage["parts"][number] {
-  return part.type === "tool-lookup"
-}
-
-/** One line per lookup, phrased as the work rather than as the tool call. */
-function describeLookup(part: ToolPart) {
-  const query = part.input?.query
-  const ids = part.input?.ids
-
-  switch (part.state) {
-    case "input-streaming":
-      return "Working out what to look up…"
-
-    case "input-available":
-      if (query) return `Looking for “${query}”…`
-      if (ids?.length)
-        return `Opening ${ids.length === 1 ? "an entry" : `${ids.length} entries`}…`
-      return "Looking something up…"
-
-    case "output-available": {
-      const titles = part.output?.entries.map((entry) => entry.title) ?? []
-      if (titles.length === 0) return "Found nothing on that."
-      return `Reading ${titles.join(", ")}`
-    }
-
-    case "output-error":
-      return "That lookup failed."
-
-    default:
-      return "Looking something up…"
-  }
-}
 
 /**
  * The label on its own, with no disclosure control.
@@ -94,7 +53,7 @@ export function ChatThinking({
   /** True while this message is the one still streaming. */
   isLive: boolean
 }) {
-  const lookups = message.parts.filter(isLookupPart)
+  const activity = message.parts.filter(isActivityPart)
 
   const hasAnswer = message.parts.some(
     (part) => part.type === "text" && "text" in part && part.text.trim() !== ""
@@ -103,16 +62,19 @@ export function ChatThinking({
   /**
    * `null` until the visitor touches it, after which their choice wins. Derived
    * rather than synced in an effect, so the open state stays a pure function of
-   * whether there is anything to show.
+   * where the turn has got to.
    */
-  const [pinnedOpen, setPinnedOpen] = useState<boolean | null>(null)
+  const [pinned, setPinned] = useState<boolean | null>(null)
 
-  if (lookups.length === 0) {
+  if (activity.length === 0) {
     return isLive && !hasAnswer ? <ChatThinkingPlaceholder /> : null
   }
 
   return (
-    <Collapsible open={pinnedOpen ?? true} onOpenChange={setPinnedOpen}>
+    <Collapsible
+      open={isThinkingOpen({ pinned, isLive, hasAnswer })}
+      onOpenChange={setPinned}
+    >
       <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md text-left font-mono text-xs text-muted-foreground transition-colors ease-out hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
         <span className={isLive && !hasAnswer ? "animate-pulse" : undefined}>
           {isLive && !hasAnswer ? "Thinking…" : "Thought process"}
@@ -124,11 +86,22 @@ export function ChatThinking({
 
       <CollapsibleContent className="overflow-hidden">
         <ul className="mt-1.5 space-y-0.5 border-l border-line pl-3">
-          {lookups.map((part, index) => (
-            <li key={index} className="font-mono text-xs text-muted-foreground">
-              {describeLookup(part)}
-            </li>
-          ))}
+          {activity.flatMap((part, partIndex) =>
+            /**
+             * A resolved step contributes more than one line — what was asked
+             * and what came back — so the list is flattened rather than mapped
+             * one-to-one. Keys are positional because the steps of a finished
+             * turn never reorder.
+             */
+            describeActivity(part).map((line, lineIndex) => (
+              <li
+                key={`${partIndex}-${lineIndex}`}
+                className="font-mono text-xs text-muted-foreground"
+              >
+                {line}
+              </li>
+            ))
+          )}
         </ul>
       </CollapsibleContent>
     </Collapsible>

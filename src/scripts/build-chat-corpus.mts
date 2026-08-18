@@ -1,16 +1,15 @@
 /**
  * Emits the two tiers the chat assistant runs on.
  *
- * Tier one is `SITE_INDEX`: a compact map of everything that exists, sent on
- * every single request. Tier two is `CORPUS_ENTRIES`: the full text, fetched
- * just-in-time by the `lookup` tool for the question actually asked.
+ * Tier one is `SITE_INDEX`: a contents listing naming what exists, sent on every
+ * single request. Tier two is `CORPUS_ENTRIES`: the full text, found by the
+ * `search` tool and fetched by `read`.
  *
- * The split exists because of Groq's 8,000 tokens-per-minute free-tier ceiling
- * (see the derivation in `src/features/chat/config.ts`). Stuffing the whole
- * ~13k-token corpus into the prompt 413s every request; a ~1.1k index plus one
- * bounded tool result fits, and — the part that matters — carries *more* depth
- * per topic than the stuffed version ever could, because nothing has to be
- * trimmed out of tier two to make room.
+ * The split began as a way under Groq's 8,000-tokens-per-minute ceiling, where
+ * sending the ~13k corpus whole failed with a 413 every time. That ceiling is
+ * gone with the move to OpenRouter, but the split stayed, because it turned out
+ * to be the better shape on its own terms: the model sees what matched before it
+ * commits to reading anything, and the listing cannot be mistaken for content.
  *
  * Both tiers read the same data modules and MDX the site itself renders, so
  * neither can describe a version of the site that no longer exists. Wired into
@@ -592,124 +591,57 @@ function addCrossReferences(entries: CorpusEntry[]): CorpusEntry[] {
  * -------------------------------------------------------------------------- */
 
 /**
- * What exists, and the id to fetch it by. Nothing more.
+ * What kinds of thing exist, and roughly what is there. Not the ids.
  *
- * The temptation is to let a description or a bullet slip in "because it's
- * short". Every one of those is billed on every request forever, and together
- * they are what pushed the previous design past the ceiling. Depth belongs in
- * tier two.
+ * This used to enumerate every entry id, because that was the only way for the
+ * model to address one. `search` supplies ids now, so the index is back to the
+ * job it should have had all along: orienting the search. Naming the employers,
+ * the projects and the posts is what lets the model turn "where have you
+ * worked?" into a query with the right words in it, and lets it answer a
+ * listing question without three round trips.
+ *
+ * The temptation is to let a description or a date slip in "because it's short".
+ * Every one of those is billed on all three calls of every turn. Depth belongs
+ * in the corpus.
  */
-function buildIndex(entries: CorpusEntry[]) {
-  const byId = (id: string) => entries.find((entry) => entry.id === id)
+function buildIndex() {
+  const companies = EXPERIENCES.map(
+    (company) =>
+      `${company.companyName}${company.isCurrentEmployer ? " (current)" : ""}`
+  ).join(", ")
 
-  const experience = EXPERIENCES.map((company) => {
-    const positions = company.positions
-      .map(
-        (position) =>
-          `  - ${position.title} (${period(position.employmentPeriod.start, position.employmentPeriod.end)}) [experience-${company.id}-${position.id}]`
-      )
-      .join("\n")
-
-    return `- ${company.companyName}${company.isCurrentEmployer ? " (current)" : ""}\n${positions}`
-  }).join("\n")
-
-  const projects = PROJECTS.map(
-    (project) =>
-      `- ${project.title} (${period(project.period.start, project.period.end)}) [project-${project.id}]`
-  ).join("\n")
-
-  const education = EDUCATION.map(
-    (entry) =>
-      `- ${entry.school}${entry.degree ? `, ${entry.degree}` : ""} (${period(entry.period.start, entry.period.end)}) [education-${entry.id}]`
-  ).join("\n")
-
-  const awards = AWARDS.map(
-    (award) =>
-      `- ${award.prize} — ${award.title}, ${award.date} [award-${slugify(award.title)}]`
-  ).join("\n")
-
+  const projects = PROJECTS.map((project) => project.title).join(", ")
+  const schools = EDUCATION.map((entry) => entry.school).join(", ")
+  const awards = AWARDS.map((award) => award.title).join(", ")
   const certifications = CERTIFICATIONS.map(
-    (certification) =>
-      `- ${certification.title} (${certification.issuer}) [certification-${slugify(certification.title)}]`
-  ).join("\n")
+    (certification) => certification.title
+  ).join(", ")
 
-  const testimonials = [...TESTIMONIALS_1, ...TESTIMONIALS_2]
-    .map(
-      (testimonial) =>
-        `- ${testimonial.authorName}, ${testimonial.authorTagline} [testimonial-${slugify(testimonial.authorName)}]`
-    )
-    .join("\n")
+  const people = [...TESTIMONIALS_1, ...TESTIMONIALS_2]
+    .map((testimonial) => testimonial.authorName)
+    .join(", ")
 
-  const gear = entries
-    .filter((entry) => entry.kind === "gear")
-    .map((entry) => `- ${entry.title.replace(/^Gear: /, "")} [${entry.id}]`)
-    .join("\n")
+  const gear = [...new Set(GEAR.map((item) => item.category))].join(", ")
+  const posts = getBlogPosts()
+    .map((post) => `"${post.metadata.title}"`)
+    .join(", ")
 
-  /**
-   * Section ids are deliberately *not* enumerated here. The long post alone has
-   * enough of them to cost more than the rest of the index put together, and
-   * listing them invites the model to guess which section answers a question
-   * instead of running a query that knows.
-   */
-  const writing = getBlogPosts()
-    .map((post) => {
-      const sections = entries.filter(
-        (entry) =>
-          entry.kind === "writing" &&
-          (entry.id === `writing-${post.slug}` ||
-            entry.id.startsWith(`writing-${post.slug}-`))
-      ).length
+  return `# What is on ${USER.displayName}'s site
 
-      return `- "${post.metadata.title}" (${post.metadata.createdAt}) — /blog/${post.slug}, ${sections} sections`
-    })
-    .join("\n")
+${USER.displayName} (${USER.username}) is a ${USER.jobTitle} based in ${USER.address}.
 
-  return `# Index of ${USER.displayName}'s site
+This is a contents listing, not the content. To say anything specific, \`search\`
+for it and then \`read\` the entries that come back.
 
-This lists what exists and the id to retrieve it by. It is an index, not the
-content: call the \`lookup\` tool with the ids in square brackets, or with a
-query, before making any specific claim.
-
-## Who
-
-${USER.displayName} (${USER.username}), ${USER.jobTitle}, based in ${USER.address}.
-${USER.bio}
-Full background at /#hello — id ${byId("about-dan")?.id}. Profiles and contact — id ${byId("about-profiles")?.id}.
-
-## Experience — page /experience, anchors /experience#position-<id>
-
-${experience}
-
-## Projects — page /projects, anchors /projects#project-<id>
-
-${projects}
-
-## Education — page /#education
-
-${education}
-
-## Awards — page /#awards
-
-${awards}
-
-## Certifications — page /#certs
-
-${certifications}
-
-## Testimonials — page /testimonials
-
-${testimonials}
-
-## Gear — page /#gear
-
-${gear}
-
-## Writing — page /blog
-
-Post bodies are retrievable in full, split into sections. Reach them with a
-query rather than an id; section ids are not listed here.
-
-${writing}
+- Employers, newest first: ${companies}. Page /experience, one entry per role.
+- Projects: ${projects}. Page /projects.
+- Education: ${schools}. Page /#education.
+- Awards: ${awards}. Page /#awards.
+- Certifications: ${certifications}. Page /#certs.
+- Testimonials from: ${people}. Page /testimonials.
+- Gear, by category: ${gear}. Page /#gear.
+- Blog posts: ${posts}. Page /blog, and each post is searchable by section.
+- Bio, location, pronouns, contact details and profile links. Page /#hello.
 `
 }
 
@@ -843,7 +775,7 @@ async function main() {
   const entries = await buildCorpus()
   assertUniqueIds(entries)
 
-  const index = buildIndex(entries)
+  const index = buildIndex()
   const indexTokens = estimateTokens(index)
   const corpusTokens = entries.reduce(
     (total, entry) => total + estimateTokens(entry.text),
@@ -899,7 +831,8 @@ async function main() {
     }
     console.error(
       `[chat-corpus] Index over budget by ~${(indexTokens - INDEX_TOKEN_BUDGET).toLocaleString()} tokens. ` +
-        `The index is resent on every request and counts against Groq's 8,000 tokens-per-minute ceiling. ` +
+        `The index is resent on every one of a turn's three requests, and a model handed a listing of ` +
+        `everything answers from it rather than searching. ` +
         `Move detail out of the largest section above into a corpus entry rather than raising INDEX_TOKEN_BUDGET.`
     )
     failed = true

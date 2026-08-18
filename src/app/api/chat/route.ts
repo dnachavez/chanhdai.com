@@ -1,4 +1,4 @@
-import { groq } from "@ai-sdk/groq"
+import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import {
   convertToModelMessages,
   stepCountIs,
@@ -10,18 +10,22 @@ import { z } from "zod"
 import {
   CHAT_COPY,
   CHAT_MODEL,
+  FALLBACK_MODELS,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
   MAX_OUTPUT_TOKENS,
   MAX_STEPS,
   MAX_TURNS_PER_SESSION,
-  REASONING_EFFORT,
 } from "@/features/chat/config"
 import { deriveHighlights } from "@/features/chat/lib/derive-highlights"
 import { checkRateLimit, getClientIp } from "@/features/chat/lib/rate-limit"
 import { suggestionsFrom } from "@/features/chat/lib/suggest-follow-ups"
 import { buildSystemPrompt } from "@/features/chat/lib/system-prompt"
 import { createChatTools } from "@/features/chat/lib/tools"
+import {
+  isUpstreamRateLimit,
+  isUpstreamUnavailable,
+} from "@/features/chat/lib/upstream-errors"
 import type { CorpusEntry } from "@/features/chat/types/corpus"
 
 /**
@@ -31,8 +35,23 @@ import type { CorpusEntry } from "@/features/chat/types/corpus"
  */
 export const dynamic = "force-dynamic"
 
-/** Two model calls plus a synchronous in-process lookup land well inside this. */
-export const maxDuration = 30
+/**
+ * Three model calls plus two synchronous in-process searches. Raised from 30
+ * with the move to OpenRouter, which routes to a provider rather than serving
+ * the model itself and is correspondingly slower per call.
+ */
+export const maxDuration = 60
+
+/**
+ * Instantiated per request rather than at module scope so the key is read when
+ * it is used, matching the guard below — a module-level client would capture an
+ * undefined key at import time and fail later with something less legible.
+ */
+function model() {
+  return createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
+    CHAT_MODEL
+  )
+}
 
 /**
  * Shape check only. The AI SDK owns the real `UIMessage` contract; this exists
@@ -71,19 +90,6 @@ function problem(message: string, status: number, headers?: HeadersInit) {
 }
 
 /**
- * Groq answers a request that exceeds the account's per-minute token ceiling
- * with 413 (`rate_limit_exceeded`) and a throttled one with 429. Both mean
- * "wait", not "broken", and telling someone to email instead of retrying loses
- * a visitor who would have had an answer a minute later.
- */
-function isUpstreamRateLimit(error: unknown) {
-  if (typeof error !== "object" || error === null) return false
-
-  const status = (error as { statusCode?: unknown }).statusCode
-  return status === 429 || status === 413
-}
-
-/**
  * History reduced to what the next answer actually needs.
  *
  * Reasoning and tool parts come back from the client on every request and are
@@ -110,7 +116,7 @@ export async function POST(request: Request) {
    * feature is off" rather than as an error, matching how the analytics clients
    * degrade when their credentials are missing.
    */
-  if (!process.env.GROQ_API_KEY) {
+  if (!process.env.OPENROUTER_API_KEY) {
     return problem(CHAT_COPY.unavailable, 503)
   }
 
@@ -170,32 +176,29 @@ export async function POST(request: Request) {
   const recent = pruneHistory(messages) as unknown as UIMessage[]
 
   const result = streamText({
-    model: groq(CHAT_MODEL),
+    model: model(),
     system: buildSystemPrompt(),
     messages: await convertToModelMessages(recent),
     tools: createChatTools({
       onEntries: (entries) => retrieved.push(...entries),
     }),
     /**
-     * One round of retrieval, then the answer. A third step would re-bill the
-     * site index against the per-minute ceiling for a question the first lookup
-     * has almost always already covered.
+     * Search, read, answer. A fourth step would let the model search again
+     * when the first attempt missed, which is the one that does not fit under
+     * the per-minute ceiling on the free tier.
      */
     stopWhen: stepCountIs(MAX_STEPS),
-    providerOptions: {
-      groq: {
-        reasoningEffort: REASONING_EFFORT,
-        /**
-         * Reasoning arrives as its own labelled channel rather than inline in
-         * the content, which is what makes it renderable as a "thinking" panel
-         * instead of leaking into the answer.
-         */
-        reasoningFormat: "parsed",
-      },
-    },
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    /**
+     * OpenRouter tries these in order if the primary cannot be served, within
+     * the same request. Passed through `extraBody` because it is an OpenRouter
+     * routing concern rather than part of the AI SDK's model contract.
+     */
+    providerOptions: {
+      openrouter: { extraBody: { models: [CHAT_MODEL, ...FALLBACK_MODELS] } },
+    },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
     },
@@ -205,15 +208,15 @@ export async function POST(request: Request) {
 
   return result.toUIMessageStreamResponse({
     /**
-     * The thought process shown to the visitor is the lookup activity, not this
-     * channel: at low effort it is terse machine notes ("Need lookup
-     * experience-aeva-1.") that read as debug output. Not forwarding it also
-     * removes it from the critical path, so the panel is not waiting on it.
+     * The thought process shown to the visitor is the search and read activity,
+     * not the model's reasoning channel — which is terse machine notes that read
+     * as debug output. Not forwarding it also removes it from the critical path,
+     * so the panel is not waiting on it.
      *
      * First of two defences against reasoning reaching the bubble regardless —
      * `stripReasoningArtifacts` on the client is the second, because this flag
-     * trusts the provider to have labelled the channel correctly, and that is
-     * exactly what has been reported failing.
+     * trusts the provider to have labelled the channel correctly, and that has
+     * been reported failing.
      */
     sendReasoning: false,
     /**
@@ -229,8 +232,15 @@ export async function POST(request: Request) {
             highlights: deriveHighlights(retrieved, answer),
           }
         : undefined,
-    /** Never surface provider internals; the visitor gets our copy instead. */
-    onError: (error) =>
-      isUpstreamRateLimit(error) ? CHAT_COPY.busy : CHAT_COPY.error,
+    /**
+     * Never surface provider internals; the visitor gets our copy instead. Three
+     * outcomes, because they call for three different things from the reader:
+     * wait a minute, try again later, or give up and email.
+     */
+    onError: (error) => {
+      if (isUpstreamRateLimit(error)) return CHAT_COPY.busy
+      if (isUpstreamUnavailable(error)) return CHAT_COPY.upstream
+      return CHAT_COPY.error
+    },
   })
 }

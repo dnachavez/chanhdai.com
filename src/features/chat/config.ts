@@ -2,7 +2,35 @@ import { decodeEmail } from "@/utils/string"
 
 import { USER } from "@/features/portfolio/data/user"
 
-export const CHAT_MODEL = "openai/gpt-oss-120b"
+/**
+ * Chosen over `openai/gpt-oss-20b:free` after running both against this prompt.
+ * Nemotron searched before declining a question about an employer that does not
+ * exist, rather than declining from priors; gpt-oss-20b emitted `(#/education)`
+ * for a link, a path this site does not serve and the renderer correctly refuses
+ * to make clickable. It is also 120b-class, matching what Groq was serving.
+ */
+export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+
+/**
+ * Tried in order when the primary cannot be served, via OpenRouter's `models`
+ * parameter — one request, routed onward server-side, so a healthy day still
+ * costs three requests a turn.
+ *
+ * This exists because exactly one provider serves the primary. OpenRouter's
+ * usual answer to an outage is to route the same model to a different host, and
+ * for a `:free` model with a single host there is nowhere to go: a 502 from
+ * Nvidia is the end of the turn. Retrying does not help either, since the AI SDK
+ * would retry the same dead endpoint. Only a different *model* is a real
+ * fallback.
+ *
+ * Both were checked against this prompt and can drive `search` and `read`.
+ * gpt-oss-20b is second despite being smaller because it is the family the
+ * Harmony sanitiser in `strip-reasoning.ts` was written for.
+ */
+export const FALLBACK_MODELS = [
+  "openai/gpt-oss-20b:free",
+  "google/gemma-4-31b-it:free",
+] as const
 
 /**
  * Read from the same encoded value the Overview panel reveals, so the address
@@ -11,89 +39,75 @@ export const CHAT_MODEL = "openai/gpt-oss-120b"
 export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
 
 /* -------------------------------------------------------------------------- *
- * Token ceiling
+ * Budget
  *
- * Every number in this block is derived from one constraint: on Groq's free
- * tier `openai/gpt-oss-120b` allows 8,000 tokens per minute counting input and
- * output together (plus 30 requests/minute and 1,000/day). The model's own
- * context window is 131k and irrelevant here.
+ * OpenRouter meters `:free` models by *requests*, not tokens: 20 per minute and
+ * 50 per day, the daily figure rising to 1,000 once the account has ever bought
+ * $10 of credit. That is a different constraint from the one this feature was
+ * built against, and it inverts which numbers matter.
  *
- * Two failures hang off that ceiling and only one is fatal:
+ * Groq's free tier was 8,000 tokens per minute counting input and output
+ * together, which made every token in the payload expensive and made a single
+ * oversized request fail permanently with a 413. Nothing here is token-bound any
+ * more — the model takes 262k of context and the whole corpus is ~13k — so the
+ * caps below are set for answer quality rather than to squeeze under a ceiling.
  *
- * - A single request over 8,000 tokens fails with a 413 every time, for
- *   everyone, forever. No retry helps.
- * - More than roughly one *turn* per minute gets a retryable 429, handled by
- *   the per-IP limiter and the "give it a minute" copy.
+ * What is scarce now is the turn itself. A turn that searches and reads costs
+ * three requests, so 50 a day is roughly **16 conversations**, and one visitor
+ * can exhaust the site's daily allowance. Two consequences:
  *
- * Retrieval is a tool rather than a stuffed bundle because of this. The whole
- * corpus is ~13k tokens, so sending it whole is a guaranteed 413; sending a
- * ~1.1k index and letting the model fetch what the question needs keeps every
- * individual call at roughly half the ceiling. Measured against these values:
- *
- *   question                            call 1        call 2        turn
- *   ----------------------------------------------------------------------
- *   "What did you build at Aeva?"       3023 / 39     3375 / 110    6,547
- *   "What's <the long post> about?"     3025 / 49     3784 / 136    6,994
- *   "What's your GPA?"                  3018 / 31     3838 / 48     6,935
- *   "Hey there" (no lookup)             3016 / 27     —             3,043
- *
- * The number that matters for the fatal failure is the largest single call —
- * 3,920 at worst, less than half of 8,000, so a 413 is structurally impossible.
- * The turn totals are what bound throughput to about one question per minute,
- * which the per-IP limiter and the "give it a minute" copy already handle.
- *
- * The `Developer:` comment on each line is the value to use after upgrading to
- * Groq's pay-as-you-go plan ($0.15/M in, $0.60/M out — about $0.002 a turn at
- * full depth). Upgrading is this block and nothing else.
+ * - The per-IP limiter matters more than it used to. It is the only thing
+ *   between one enthusiastic visitor and everyone else's access.
+ * - Buying $10 of credit once raises the cap to 1,000 requests a day (~330
+ *   turns) without changing a line of this file. That is the cheapest available
+ *   fix if the limit is ever actually reached.
  * -------------------------------------------------------------------------- */
 
 /**
- * Model calls per turn, counting the answer. Two allows exactly one round of
- * retrieval, which covers nearly every question; a third would re-bill the
- * index and push a turn over the ceiling.
- */
-export const MAX_STEPS = 2 // Developer: 4
-
-/**
- * Ceiling on a single `lookup` result, summed across the entries it returns.
- * Also the per-entry cap the build asserts, since an entry larger than this
- * could never be served whole.
- */
-export const MAX_TOOL_RESULT_TOKENS = 800 // Developer: 4_000
-
-/**
- * Turns kept from the conversation, counting both sides. History is the only
- * part of the payload that grows without bound, and the oldest turns are the
- * least useful per token.
- */
-export const MAX_HISTORY_MESSAGES = 4 // Developer: 12
-
-/**
- * Caps the reply's share of the ceiling. Long enough for the two-to-four
- * sentence answers the system prompt asks for, short enough that one verbose
- * reply cannot eat the budget for the next question.
- */
-export const MAX_OUTPUT_TOKENS = 600 // Developer: 1_000
-
-/**
- * Low effort is a latency and budget decision. With retrieval in place the
- * task is extraction and rephrasing from material now guaranteed to be in
- * context, not derivation.
- */
-export const REASONING_EFFORT = "low" as const // Developer: "medium"
-
-/**
- * Hard cap on the always-in-context index, asserted by the build.
+ * Model calls per turn, counting the answer: search, read, answer.
  *
- * Unlike the numbers above this one does not move on the Developer plan. A
- * small always-in-context tier is a quality decision as much as a cost one:
- * padding it back out to the whole corpus is what degraded answers into
- * confident recombination in the first place.
+ * Also the multiplier on every request-based limit above, which is the reason
+ * not to raise it casually — a fourth step is a 33% cut to turns per day.
  */
-export const INDEX_TOKEN_BUDGET = 1_100
+export const MAX_STEPS = 3
 
-/** Entries one `lookup` may return, before the token cap trims further. */
-export const MAX_LOOKUP_RESULTS = 4
+/**
+ * Ceiling on a single `read` result, summed across the entries it returns, and
+ * the per-entry cap the build asserts.
+ *
+ * Raised from 800 with the move off Groq. It was low because every token was
+ * charged against a per-minute ceiling; now it decides how finely blog posts are
+ * chopped at build time, and larger chunks mean fewer half-thoughts.
+ */
+export const MAX_TOOL_RESULT_TOKENS = 3_000
+
+/**
+ * Turns kept from the conversation, counting both sides. Raised with the move
+ * off Groq for the same reason: history is what makes a follow-up question
+ * intelligible, and it is no longer competing with the answer for room.
+ */
+export const MAX_HISTORY_MESSAGES = 10
+
+/**
+ * A ceiling, not a target — the style rules ask for two to four sentences. Kept
+ * close to that so one runaway answer cannot bury the thread.
+ */
+export const MAX_OUTPUT_TOKENS = 800
+
+/**
+ * Hard cap on the always-in-context listing, asserted by the build.
+ *
+ * Unchanged by the provider switch, and deliberately so. It is small because a
+ * model handed a list of everything describes it from priors rather than
+ * searching — a grounding decision, not a cost one.
+ */
+export const INDEX_TOKEN_BUDGET = 450
+
+/** Candidates `search` returns. Previews only, so this is cheap. */
+export const MAX_SEARCH_HITS = 5
+
+/** Entries one `read` may fetch, before the token cap trims further. */
+export const MAX_READ_ENTRIES = 3
 
 /**
  * Assistant replies allowed per conversation. Client-supplied and therefore
@@ -125,6 +139,13 @@ export const CHAT_COPY = {
    * would have got an answer sixty seconds later.
    */
   busy: `Too many questions at once — give it a minute. Or email me: ${CONTACT_EMAIL}`,
+  /**
+   * Distinct from both `error` and `busy`: the model provider fell over, which
+   * is neither the visitor's fault nor something waiting a minute reliably
+   * fixes, but is also not a bug in this site. Saying "something broke" invited
+   * a bug report for someone else's outage.
+   */
+  upstream: `The model is having a moment. Try again in a bit, or email me: ${CONTACT_EMAIL}`,
   rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
   sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
   unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,

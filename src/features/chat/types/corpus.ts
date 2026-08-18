@@ -1,7 +1,7 @@
 /**
  * The retrievable unit of the site.
  *
- * One entry is what the assistant can fetch and read in a single `lookup`
+ * One entry is what the assistant can fetch in a single `read`
  * result, so the granularity matters: an experience *position* rather than a
  * company, one section of a blog post rather than the whole post. Anything
  * larger than `MAX_TOOL_RESULT_TOKENS` cannot be served whole and is split at

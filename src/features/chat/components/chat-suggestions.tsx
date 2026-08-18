@@ -77,7 +77,7 @@ export function useOpeners(exclude: readonly string[]) {
 
 /**
  * Follow-ups the route attached to a finished message, falling back to openers
- * for turns that needed no lookup — a greeting or an off-topic refusal has no
+ * for turns that needed no retrieval — a greeting or an off-topic refusal has no
  * retrieved entries to derive questions from, and offering nothing there would
  * dead-end the conversation.
  */

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { CORPUS_ENTRIES } from "@/generated/chat-corpus"
 
-import { MAX_LOOKUP_RESULTS, MAX_TOOL_RESULT_TOKENS } from "../config"
+import { MAX_SEARCH_HITS, MAX_TOOL_RESULT_TOKENS } from "../config"
 import { searchCorpus, tokenize } from "./search-corpus"
 
 /**
@@ -11,7 +11,7 @@ import { searchCorpus, tokenize } from "./search-corpus"
  * from the site would pass while the assistant retrieved the wrong entry.
  */
 
-const ids = (query: string, limit = MAX_LOOKUP_RESULTS) =>
+const ids = (query: string, limit = MAX_SEARCH_HITS) =>
   searchCorpus(query, CORPUS_ENTRIES, limit).map((hit) => hit.entry.id)
 
 describe("tokenize", () => {

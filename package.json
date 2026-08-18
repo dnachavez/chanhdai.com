@@ -39,7 +39,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^4.0.28",
     "@ai-sdk/react": "^4.0.69",
     "@base-ui/react": "^1.6.0",
     "@bprogress/next": "^3.2.12",
@@ -51,6 +50,7 @@
     "@ncdai/react-wheel-picker": "^1.2.0",
     "@number-flow/react": "^0.6.0",
     "@openpanel/web": "^1.4.1",
+    "@openrouter/ai-sdk-provider": "^3.0.0",
     "@phosphor-icons/react": "^2.1.10",
     "@remixicon/react": "^4.9.0",
     "@rexa-developer/tiks": "^0.1.9",

@@ -2,7 +2,7 @@ import { MAX_SUGGESTIONS } from "../config"
 import type { CorpusEntry } from "../types/corpus"
 
 /**
- * Turns the entries a lookup actually read into "what to ask next" chips.
+ * Turns the entries the assistant actually read into "what to ask next" chips.
  *
  * Deliberately not a second model call: the follow-ups are written at build time
  * against each entry's own fields, so surfacing the ones belonging to entries the
