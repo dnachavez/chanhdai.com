@@ -13,16 +13,24 @@ const processor = remark()
   .use(remarkHeading)
   .use(remarkEmbedsToMarkdown)
 
+/**
+ * MDX body to plain Markdown: components become their text equivalents and
+ * embeds become links. Shared with the chat corpus builder, which splits the
+ * result by heading — the two must not drift, or the assistant would quote a
+ * version of a post that no page ever rendered.
+ */
+export async function renderDocBody(doc: Doc) {
+  return String((await processor.process({ value: doc.content })).value)
+}
+
 export async function getLLMText(doc: Doc) {
-  const processed = await processor.process({
-    value: doc.content,
-  })
+  const body = await renderDocBody(doc)
 
   return `# ${doc.metadata.title}
 
 ${doc.metadata.description}
 
-${processed.value}
+${body}
 
 Last updated on ${format(new Date(doc.metadata.updatedAt), "MMMM d, yyyy")}`
 }

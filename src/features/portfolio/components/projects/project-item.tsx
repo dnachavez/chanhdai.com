@@ -3,6 +3,7 @@ import { addQueryParams } from "@/utils/url"
 import { BoxIcon, InfinityIcon, LinkIcon } from "lucide-react"
 
 import { UTM_PARAMS } from "@/config/site"
+import { cn } from "@/lib/utils"
 import { Tag } from "@/components/ui/tag"
 import { Prose } from "@/components/ui/typography"
 import {
@@ -42,7 +43,11 @@ export function ProjectItem({
   const isSinglePeriod = end === start
 
   return (
-    <Collapsible className={className} defaultOpen={project.isExpanded}>
+    <Collapsible
+      id={`project-${project.id}`}
+      className={cn("scroll-mt-14", className)}
+      defaultOpen={project.isExpanded}
+    >
       <div className="group/project flex items-center hover:bg-accent-muted">
         {project.logo ? (
           <Image

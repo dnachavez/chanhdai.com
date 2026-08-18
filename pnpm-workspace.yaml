@@ -1,5 +1,10 @@
 allowBuilds:
   core-js: false
+  # Pulled in by tsx, which runs the context-bundle build step. Its install
+  # script only verifies the platform binary that already ships as an optional
+  # dependency, but leaving this undeclared makes `pnpm install` exit non-zero
+  # on the ignored-builds gate, failing every script that runs a dep check.
+  esbuild: true
   msw: false
   protobufjs: false
   puppeteer: false

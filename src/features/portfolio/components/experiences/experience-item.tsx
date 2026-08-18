@@ -95,6 +95,13 @@ export function ExperienceItem({
           <ExperiencePositionItem
             key={position.id}
             position={position}
+            /**
+             * Position ids are only unique within a company ("1" appears eight
+             * times on the page), so the anchor is qualified here where both
+             * halves are in scope. The chat assistant links to these to point at
+             * a specific role rather than a whole employer.
+             */
+            anchorId={`position-${experience.id}-${position.id}`}
             headingAs={POSITION_HEADING[headingAs]}
           />
         ))}

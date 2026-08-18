@@ -18,9 +18,12 @@ import type { ExperiencePosition } from "@/features/portfolio/types/experiences"
 
 export function ExperiencePositionItem({
   position,
+  anchorId,
   headingAs = "h4",
 }: {
   position: ExperiencePosition
+  /** Page-unique anchor, qualified with the company id by `ExperienceItem`. */
+  anchorId?: string
   headingAs?: "h3" | "h4"
 }) {
   const Heading = headingAs
@@ -30,7 +33,8 @@ export function ExperiencePositionItem({
 
   return (
     <Collapsible
-      className="group/experience-position relative"
+      id={anchorId}
+      className="group/experience-position relative scroll-mt-14"
       defaultOpen={position.isExpanded}
       disabled={!position.description}
     >

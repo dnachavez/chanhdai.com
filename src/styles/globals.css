@@ -371,6 +371,29 @@
   /* Layout */
   --header-height: --spacing(14);
   --fade-bottom-height: --spacing(24);
+
+  /*
+   * Floating action row, bottom-right: the chat launcher and the scroll-to-top
+   * button. The chat panel anchors directly above the row, so both read these
+   * rather than each hard-coding the other's dimensions — the previous version
+   * kept a `--chat-launcher-clearance` copy of the launcher's height in the
+   * scroll button, which silently overlapped the moment either size changed.
+   */
+  --fab-inset: --spacing(2);
+  --fab-size: --spacing(12);
+  --fab-gap: --spacing(3);
+}
+
+@media (width >= 40rem) {
+  :root {
+    --fab-inset: --spacing(4);
+  }
+}
+
+@media (width >= 64rem) {
+  :root {
+    --fab-inset: --spacing(8);
+  }
 }
 
 .dark {

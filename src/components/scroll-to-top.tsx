@@ -29,10 +29,25 @@ export function ScrollToTop({
       data-visible={visible}
       data-scroll-direction={scrollDirection}
       className={cn(
-        "[--bottom:0.5rem] sm:[--bottom:1rem] lg:[--bottom:2rem]",
-        "fixed right-4 bottom-[calc(var(--bottom,0.5rem)+env(safe-area-inset-bottom,0))] z-50 lg:right-8",
-        "transition-[background-color,opacity] duration-300 data-[scroll-direction=down]:opacity-30 data-[scroll-direction=up]:opacity-100 data-[visible=false]:opacity-0",
+        /**
+         * Positioning belongs to `FloatingActions`, which lays this out beside
+         * the chat launcher. Kept purely presentational here so neither button
+         * has to know the other's size.
+         */
+        "transition-[background-color,opacity,width,margin] duration-300",
+        "data-[scroll-direction=down]:opacity-30 data-[scroll-direction=up]:opacity-100",
         "data-[scroll-direction=down]:hover:opacity-100",
+        /**
+         * Collapses to nothing rather than merely fading, so the launcher sits
+         * flush in the corner while this button is hidden and slides across to
+         * make room as it appears. Fading alone left a permanent 40px hole to
+         * the launcher's right that read as bad alignment.
+         *
+         * The left margin is the row's only gap — `gap-2` on the row would
+         * survive the collapse and reopen that hole.
+         */
+        "ml-2 w-8 data-[visible=false]:pointer-events-none data-[visible=false]:ml-0 data-[visible=false]:w-0 data-[visible=false]:opacity-0",
+        "overflow-hidden",
         "border-none",
         className
       )}

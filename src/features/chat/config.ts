@@ -1,0 +1,152 @@
+import { decodeEmail } from "@/utils/string"
+
+import { USER } from "@/features/portfolio/data/user"
+
+/**
+ * Chosen over `openai/gpt-oss-20b:free` after running both against this prompt.
+ * Nemotron searched before declining a question about an employer that does not
+ * exist, rather than declining from priors; gpt-oss-20b emitted `(#/education)`
+ * for a link, a path this site does not serve and the renderer correctly refuses
+ * to make clickable. It is also 120b-class, matching what Groq was serving.
+ */
+export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
+
+/**
+ * Tried in order when the primary cannot be served, via OpenRouter's `models`
+ * parameter — one request, routed onward server-side, so a healthy day still
+ * costs three requests a turn.
+ *
+ * This exists because exactly one provider serves the primary. OpenRouter's
+ * usual answer to an outage is to route the same model to a different host, and
+ * for a `:free` model with a single host there is nowhere to go: a 502 from
+ * Nvidia is the end of the turn. Retrying does not help either, since the AI SDK
+ * would retry the same dead endpoint. Only a different *model* is a real
+ * fallback.
+ *
+ * Both were checked against this prompt and can drive `search` and `read`.
+ * gpt-oss-20b is second despite being smaller because it is the family the
+ * Harmony sanitiser in `strip-reasoning.ts` was written for.
+ */
+export const FALLBACK_MODELS = [
+  "openai/gpt-oss-20b:free",
+  "google/gemma-4-31b-it:free",
+] as const
+
+/**
+ * Read from the same encoded value the Overview panel reveals, so the address
+ * the bot hands out and the address the page shows can never drift apart.
+ */
+export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
+
+/* -------------------------------------------------------------------------- *
+ * Budget
+ *
+ * OpenRouter meters `:free` models by *requests*, not tokens: 20 per minute and
+ * 50 per day, the daily figure rising to 1,000 once the account has ever bought
+ * $10 of credit. That is a different constraint from the one this feature was
+ * built against, and it inverts which numbers matter.
+ *
+ * Groq's free tier was 8,000 tokens per minute counting input and output
+ * together, which made every token in the payload expensive and made a single
+ * oversized request fail permanently with a 413. Nothing here is token-bound any
+ * more — the model takes 262k of context and the whole corpus is ~13k — so the
+ * caps below are set for answer quality rather than to squeeze under a ceiling.
+ *
+ * What is scarce now is the turn itself. A turn that searches and reads costs
+ * three requests, so 50 a day is roughly **16 conversations**, and one visitor
+ * can exhaust the site's daily allowance. Two consequences:
+ *
+ * - The per-IP limiter matters more than it used to. It is the only thing
+ *   between one enthusiastic visitor and everyone else's access.
+ * - Buying $10 of credit once raises the cap to 1,000 requests a day (~330
+ *   turns) without changing a line of this file. That is the cheapest available
+ *   fix if the limit is ever actually reached.
+ * -------------------------------------------------------------------------- */
+
+/**
+ * Model calls per turn, counting the answer: search, read, answer.
+ *
+ * Also the multiplier on every request-based limit above, which is the reason
+ * not to raise it casually — a fourth step is a 33% cut to turns per day.
+ */
+export const MAX_STEPS = 3
+
+/**
+ * Ceiling on a single `read` result, summed across the entries it returns, and
+ * the per-entry cap the build asserts.
+ *
+ * Raised from 800 with the move off Groq. It was low because every token was
+ * charged against a per-minute ceiling; now it decides how finely blog posts are
+ * chopped at build time, and larger chunks mean fewer half-thoughts.
+ */
+export const MAX_TOOL_RESULT_TOKENS = 3_000
+
+/**
+ * Turns kept from the conversation, counting both sides. Raised with the move
+ * off Groq for the same reason: history is what makes a follow-up question
+ * intelligible, and it is no longer competing with the answer for room.
+ */
+export const MAX_HISTORY_MESSAGES = 10
+
+/**
+ * A ceiling, not a target — the style rules ask for two to four sentences. Kept
+ * close to that so one runaway answer cannot bury the thread.
+ */
+export const MAX_OUTPUT_TOKENS = 800
+
+/**
+ * Hard cap on the always-in-context listing, asserted by the build.
+ *
+ * Unchanged by the provider switch, and deliberately so. It is small because a
+ * model handed a list of everything describes it from priors rather than
+ * searching — a grounding decision, not a cost one.
+ */
+export const INDEX_TOKEN_BUDGET = 450
+
+/** Candidates `search` returns. Previews only, so this is cheap. */
+export const MAX_SEARCH_HITS = 5
+
+/** Entries one `read` may fetch, before the token cap trims further. */
+export const MAX_READ_ENTRIES = 3
+
+/**
+ * Assistant replies allowed per conversation. Client-supplied and therefore
+ * trivially reset by anyone who cares to; it exists to bound honest use, not to
+ * stop abuse. The per-IP limit is the actual control.
+ */
+export const MAX_TURNS_PER_SESSION = 10
+
+export const RATE_LIMIT = {
+  requests: 20,
+  windowMs: 60 * 60 * 1000,
+} as const
+
+/** Longer than any real question, short enough to bound a prompt-stuffing attempt. */
+export const MAX_MESSAGE_LENGTH = 1_000
+
+/** Follow-up chips offered after a turn, and openers offered before one. */
+export const MAX_SUGGESTIONS = 3
+export const MAX_OPENERS = 4
+
+export const CHAT_COPY = {
+  title: "Ask me anything",
+  subtitle: "Answers come from what's published on this site.",
+  placeholder: "Ask about my work…",
+  error: `Something broke. Email me: ${CONTACT_EMAIL}`,
+  /**
+   * Distinct from `error`: the upstream per-minute ceiling is a wait, not a
+   * fault, and telling someone to email instead of retrying loses a visitor who
+   * would have got an answer sixty seconds later.
+   */
+  busy: `Too many questions at once — give it a minute. Or email me: ${CONTACT_EMAIL}`,
+  /**
+   * Distinct from both `error` and `busy`: the model provider fell over, which
+   * is neither the visitor's fault nor something waiting a minute reliably
+   * fixes, but is also not a bug in this site. Saying "something broke" invited
+   * a bug report for someone else's outage.
+   */
+  upstream: `The model is having a moment. Try again in a bit, or email me: ${CONTACT_EMAIL}`,
+  rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
+  sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
+  unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,
+} as const

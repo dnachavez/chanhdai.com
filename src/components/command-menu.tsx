@@ -14,6 +14,7 @@ import {
   LaptopMinimalIcon,
   LayersIcon,
   LineChartIcon,
+  MessageCircleIcon,
   MonitorIcon,
   MoonStarIcon,
   QuoteIcon,
@@ -79,6 +80,13 @@ const MENU_LINKS: CommandLinkItem[] = [
     kind: "page",
     icon: <QuoteIcon strokeWidth={1.5} />,
     shortcut: "GT",
+  },
+  {
+    title: "Chat",
+    href: "/chat",
+    kind: "page",
+    icon: <MessageCircleIcon />,
+    keywords: ["ask", "ai", "assistant"],
   },
 ]
 
