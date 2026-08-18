@@ -12,14 +12,14 @@ for it and then `read` the entries that come back.
 - Education: University of Southern Philippines Foundation, Dumalag Central National High School. Page /#education.
 - Awards: TCS Digital Innovation goIT App Development, DICT REGION VII HACKFORGOV2: Capture-the-Flag, CCS Days 2023 Hackathon, CESAFI 2024 Computer Quiz Bowl, CCS Days 2025 Hackathon, CCS Days 2026 Hackathon. Page /#awards.
 - Certifications: TOPCIT Level 4 (Test of Practical Competency in ICT), Google Data Analytics Professional Certificate. Page /#certs.
-- Testimonials from: Nikka Bernal-Batingana, Papu Borah, Louis Evans, John Nick Viduya. Page /testimonials.
+- Testimonials from: Nikka Bernal-Batingana, Papu Borah, Louis Evans, John Nick Viduya, Dov Kaufmann. Page /testimonials.
 - Gear, by category: Computers, Displays, Desk & peripherals, Everyday carry. Page /#gear.
 - Blog posts: "The long way to magna cum laude", "Welcome to dnachavez.dev". Page /blog, and each post is searchable by section.
 - Bio, location, pronouns, contact details and profile links. Page /#hello.
 
 ---
 
-# Corpus (64 entries, fetched on demand)
+# Corpus (65 entries, fetched on demand)
 
 ### about-dan
 
@@ -721,6 +721,20 @@ This is a direct quote. Reproduce it verbatim or not at all.
 
 John Nick Viduya (Tech Lead · Tolstoy & Framework), 2026-08-16:
 "Dan was our go to full stack engineer on Tolstoy and Framework, and he was especially strong on the AI side. He could take a rough idea, figure out the right approach, and ship something that actually worked in production, not just in a demo. He understands both the model layer and the product around it, which is rarer than people think. On top of that he was reliable and easy to work with. Clear communication, no ego, took feedback well, and kept things moving. I'd work with him again without hesitation."
+
+### testimonial-dov-kaufmann
+
+- Kind: testimonial
+- Title: Testimonial from Dov Kaufmann
+- URL: /testimonials
+- Tokens: ~88
+- Keywords: Dov Kaufmann, CEO · Tolstoy & Framework, testimonial, recommendation, reference, colleague, praise
+- Follow-ups: How did you work with Dov Kaufmann? / What did Nikka Bernal-Batingana say about you? / What did Papu Borah say about you? / What did Louis Evans say about you?
+
+This is a direct quote. Reproduce it verbatim or not at all.
+
+Dov Kaufmann (CEO · Tolstoy & Framework), 2026-08-18:
+"Dan brought professionalism, sharp thinking, and a genuinely collaborative spirit to the project. He was dependable, effective, and consistently added value to the team. I enjoyed working with him and recommend him with confidence."
 
 ### gear-computers
 

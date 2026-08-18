@@ -985,6 +985,29 @@ export const CORPUS_ENTRIES: readonly CorpusEntry[] = [
     ]
   },
   {
+    "id": "testimonial-dov-kaufmann",
+    "kind": "testimonial",
+    "title": "Testimonial from Dov Kaufmann",
+    "url": "/testimonials",
+    "keywords": [
+      "Dov Kaufmann",
+      "CEO · Tolstoy & Framework",
+      "testimonial",
+      "recommendation",
+      "reference",
+      "colleague",
+      "praise"
+    ],
+    "text": "This is a direct quote. Reproduce it verbatim or not at all.\n\nDov Kaufmann (CEO · Tolstoy & Framework), 2026-08-18:\n\"Dan brought professionalism, sharp thinking, and a genuinely collaborative spirit to the project. He was dependable, effective, and consistently added value to the team. I enjoyed working with him and recommend him with confidence.\"",
+    "question": "What did Dov Kaufmann say about you?",
+    "followUps": [
+      "How did you work with Dov Kaufmann?",
+      "What did Nikka Bernal-Batingana say about you?",
+      "What did Papu Borah say about you?",
+      "What did Louis Evans say about you?"
+    ]
+  },
+  {
     "id": "gear-computers",
     "kind": "gear",
     "title": "Gear: Computers",
