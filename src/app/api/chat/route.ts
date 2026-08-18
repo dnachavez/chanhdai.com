@@ -10,7 +10,6 @@ import { z } from "zod"
 import {
   CHAT_COPY,
   CHAT_MODEL,
-  FALLBACK_MODELS,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
   MAX_OUTPUT_TOKENS,
@@ -192,22 +191,6 @@ export async function POST(request: Request) {
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
-    /**
-     * OpenRouter tries these in order if the primary cannot be served, within
-     * the same request.
-     *
-     * `models` sits directly on the provider options, not under an `extraBody`
-     * wrapper: `@openrouter/ai-sdk-provider` spreads this object straight into
-     * the request body, so a wrapper key is sent verbatim as an unrecognised
-     * `extraBody` field while `models` itself stays undefined. That is what this
-     * route did for its first release, silently — the AI SDK types
-     * `providerOptions` as a loose record, so nothing rejected the wrapper, and
-     * the whole fallback list was dead. Found in a 429 log that printed the
-     * request body it had actually sent.
-     */
-    providerOptions: {
-      openrouter: { models: [CHAT_MODEL, ...FALLBACK_MODELS] },
-    },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
     },
@@ -249,6 +232,11 @@ export async function POST(request: Request) {
      * Order is load-bearing. An exhausted daily allowance is also a 429, so
      * `isUpstreamRateLimit` matches it too; asking it second is what keeps the
      * broader predicate from claiming the narrower case.
+     *
+     * `upstream` carries more weight than it used to. A single provider serves
+     * this model and there is no longer a fallback list to route around it, so
+     * a 502 from that host ends the turn — and the SDK's retries only reach the
+     * same dead endpoint. This copy is the whole of the outage story now.
      */
     onError: (error) => {
       if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted

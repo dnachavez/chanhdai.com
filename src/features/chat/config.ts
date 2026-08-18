@@ -12,27 +12,6 @@ import { USER } from "@/features/portfolio/data/user"
 export const CHAT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free"
 
 /**
- * Tried in order when the primary cannot be served, via OpenRouter's `models`
- * parameter — one request, routed onward server-side, so a healthy day still
- * costs three requests a turn.
- *
- * This exists because exactly one provider serves the primary. OpenRouter's
- * usual answer to an outage is to route the same model to a different host, and
- * for a `:free` model with a single host there is nowhere to go: a 502 from
- * Nvidia is the end of the turn. Retrying does not help either, since the AI SDK
- * would retry the same dead endpoint. Only a different *model* is a real
- * fallback.
- *
- * Both were checked against this prompt and can drive `search` and `read`.
- * gpt-oss-20b is second despite being smaller because it is the family the
- * Harmony sanitiser in `strip-reasoning.ts` was written for.
- */
-export const FALLBACK_MODELS = [
-  "openai/gpt-oss-20b:free",
-  "google/gemma-4-31b-it:free",
-] as const
-
-/**
  * Read from the same encoded value the Overview panel reveals, so the address
  * the bot hands out and the address the page shows can never drift apart.
  */
@@ -42,9 +21,11 @@ export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
  * Budget
  *
  * OpenRouter meters `:free` models by *requests*, not tokens: 20 per minute and
- * 50 per day, the daily figure rising to 1,000 once the account has ever bought
- * $10 of credit. That is a different constraint from the one this feature was
- * built against, and it inverts which numbers matter.
+ * 1,000 per day, the daily figure being what the account's one-off $10 credit
+ * purchase unlocked — the threshold is measured on credit bought all time, not
+ * on a balance, and `:free` models draw none of it down, so it does not lapse.
+ * That is a different constraint from the one this feature was built against,
+ * and it inverts which numbers matter.
  *
  * Groq's free tier was 8,000 tokens per minute counting input and output
  * together, which made every token in the payload expensive and made a single
@@ -53,14 +34,18 @@ export const CONTACT_EMAIL = decodeEmail(USER.emailB64)
  * caps below are set for answer quality rather than to squeeze under a ceiling.
  *
  * What is scarce now is the turn itself. A turn that searches and reads costs
- * three requests, so 50 a day is roughly **16 conversations**, and one visitor
- * can exhaust the site's daily allowance. Two consequences:
+ * three requests, so 1,000 a day is roughly **330 conversations** — enough that
+ * the daily cap is no longer the binding limit. The 20 requests a minute is:
+ * about six turns a minute across every visitor at once.
  *
- * - The per-IP limiter matters more than it used to. It is the only thing
- *   between one enthusiastic visitor and everyone else's access.
- * - Buying $10 of credit once raises the cap to 1,000 requests a day (~330
- *   turns) without changing a line of this file. That is the cheapest available
- *   fix if the limit is ever actually reached.
+ * The per-IP limiter is what keeps that minute from belonging to one person.
+ * It matters more than the daily figure now, not less.
+ *
+ * Measured against the alternatives before settling here: Groq's free tier caps
+ * tokens rather than requests and could not fit one turn under 8k a minute;
+ * Gemini's allows five requests a minute, which is under two turns; and both
+ * Together and the paid tiers spend a balance per token rather than unlocking a
+ * ceiling once.
  * -------------------------------------------------------------------------- */
 
 /**
