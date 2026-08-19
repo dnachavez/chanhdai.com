@@ -72,9 +72,13 @@ jobs:
         run: pnpm redteam:snapshot
 
       - name: Start target
+        # Server output is redirected to a file rather than left on the step's
+        # stdout: the process outlives the step that started it, so anything it
+        # prints afterwards — including the route's own error logging — is lost.
+        # The "Target logs" step below is what makes a failing run diagnosable.
         run: |
           pnpm build
-          pnpm start &
+          pnpm start > /tmp/target.log 2>&1 &
           npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -86,6 +90,10 @@ jobs:
           # Two roles at once: the widget's own model, and — through the paid
           # model the config names — the grader for the two control cases.
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Target logs
+        if: always()
+        run: tail -n 200 /tmp/target.log || true
 
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
@@ -125,9 +133,13 @@ jobs:
         run: pnpm redteam:snapshot
 
       - name: Start target
+        # Server output is redirected to a file rather than left on the step's
+        # stdout: the process outlives the step that started it, so anything it
+        # prints afterwards — including the route's own error logging — is lost.
+        # The "Target logs" step below is what makes a failing run diagnosable.
         run: |
           pnpm build
-          pnpm start &
+          pnpm start > /tmp/target.log 2>&1 &
           npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -154,6 +166,10 @@ jobs:
       # `redteam run` exits 0 whatever it finds. This is what makes it a gate.
       - name: Gate on critical and high findings
         run: node redteam/gate.mjs ${{ steps.pick.outputs.output }}
+
+      - name: Target logs
+        if: always()
+        run: tail -n 200 /tmp/target.log || true
 
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
