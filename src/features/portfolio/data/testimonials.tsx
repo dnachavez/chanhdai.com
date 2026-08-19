@@ -47,6 +47,15 @@ export const TESTIMONIALS_1: Testimonial[] = [
       "Dan brought professionalism, sharp thinking, and a genuinely collaborative spirit to the project. He was dependable, effective, and consistently added value to the team. I enjoyed working with him and recommend him with confidence.",
     date: "2026-08-18",
   },
+  {
+    authorAvatar: "/images/testimonials/marlon-gacrama-jr.webp",
+    authorName: "Marlon Gacrama Jr",
+    authorTagline: "Full Stack Web & AI Developer · Cargo Atlanta",
+    url: "https://www.marlongacrama.com",
+    quote:
+      "I've known Dan for more than four years. We first met during our university's CCS Days 2022 Hackathon, where we were teammates. As someone from the same alma mater, I've had the chance to see his growth and skills firsthand over the years. Dan stands out for how quickly he understands problems and works on solutions with minimal guidance. He's especially strong in AI, always keeping up with the latest developments and finding practical ways to apply what he learns. He's a fast learner, highly capable, and someone I'd confidently recommend to any team.",
+    date: "2026-08-19",
+  },
 ]
 
 // Short quotes (50 characters or fewer), ordered by date ascending
