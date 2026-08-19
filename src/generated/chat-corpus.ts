@@ -1008,6 +1008,29 @@ export const CORPUS_ENTRIES: readonly CorpusEntry[] = [
     ]
   },
   {
+    "id": "testimonial-marlon-gacrama-jr",
+    "kind": "testimonial",
+    "title": "Testimonial from Marlon Gacrama Jr",
+    "url": "/testimonials",
+    "keywords": [
+      "Marlon Gacrama Jr",
+      "Full Stack Web & AI Developer · Cargo Atlanta",
+      "testimonial",
+      "recommendation",
+      "reference",
+      "colleague",
+      "praise"
+    ],
+    "text": "This is a direct quote. Reproduce it verbatim or not at all.\n\nMarlon Gacrama Jr (Full Stack Web & AI Developer · Cargo Atlanta), 2026-08-19:\n\"I've known Dan for more than four years. We first met during our university's CCS Days 2022 Hackathon, where we were teammates. As someone from the same alma mater, I've had the chance to see his growth and skills firsthand over the years. Dan stands out for how quickly he understands problems and works on solutions with minimal guidance. He's especially strong in AI, always keeping up with the latest developments and finding practical ways to apply what he learns. He's a fast learner, highly capable, and someone I'd confidently recommend to any team.\"",
+    "question": "What did Marlon Gacrama Jr say about you?",
+    "followUps": [
+      "How did you work with Marlon Gacrama Jr?",
+      "What did Nikka Bernal-Batingana say about you?",
+      "What did Papu Borah say about you?",
+      "What did Louis Evans say about you?"
+    ]
+  },
+  {
     "id": "gear-computers",
     "kind": "gear",
     "title": "Gear: Computers",

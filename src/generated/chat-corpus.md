@@ -12,14 +12,14 @@ for it and then `read` the entries that come back.
 - Education: University of Southern Philippines Foundation, Dumalag Central National High School. Page /#education.
 - Awards: TCS Digital Innovation goIT App Development, DICT REGION VII HACKFORGOV2: Capture-the-Flag, CCS Days 2023 Hackathon, CESAFI 2024 Computer Quiz Bowl, CCS Days 2025 Hackathon, CCS Days 2026 Hackathon. Page /#awards.
 - Certifications: TOPCIT Level 4 (Test of Practical Competency in ICT), Google Data Analytics Professional Certificate. Page /#certs.
-- Testimonials from: Nikka Bernal-Batingana, Papu Borah, Louis Evans, John Nick Viduya, Dov Kaufmann. Page /testimonials.
+- Testimonials from: Nikka Bernal-Batingana, Papu Borah, Louis Evans, John Nick Viduya, Dov Kaufmann, Marlon Gacrama Jr. Page /testimonials.
 - Gear, by category: Computers, Displays, Desk & peripherals, Everyday carry. Page /#gear.
 - Blog posts: "The long way to magna cum laude", "Welcome to dnachavez.dev". Page /blog, and each post is searchable by section.
 - Bio, location, pronouns, contact details and profile links. Page /#hello.
 
 ---
 
-# Corpus (65 entries, fetched on demand)
+# Corpus (66 entries, fetched on demand)
 
 ### about-dan
 
@@ -735,6 +735,20 @@ This is a direct quote. Reproduce it verbatim or not at all.
 
 Dov Kaufmann (CEO · Tolstoy & Framework), 2026-08-18:
 "Dan brought professionalism, sharp thinking, and a genuinely collaborative spirit to the project. He was dependable, effective, and consistently added value to the team. I enjoyed working with him and recommend him with confidence."
+
+### testimonial-marlon-gacrama-jr
+
+- Kind: testimonial
+- Title: Testimonial from Marlon Gacrama Jr
+- URL: /testimonials
+- Tokens: ~175
+- Keywords: Marlon Gacrama Jr, Full Stack Web & AI Developer · Cargo Atlanta, testimonial, recommendation, reference, colleague, praise
+- Follow-ups: How did you work with Marlon Gacrama Jr? / What did Nikka Bernal-Batingana say about you? / What did Papu Borah say about you? / What did Louis Evans say about you?
+
+This is a direct quote. Reproduce it verbatim or not at all.
+
+Marlon Gacrama Jr (Full Stack Web & AI Developer · Cargo Atlanta), 2026-08-19:
+"I've known Dan for more than four years. We first met during our university's CCS Days 2022 Hackathon, where we were teammates. As someone from the same alma mater, I've had the chance to see his growth and skills firsthand over the years. Dan stands out for how quickly he understands problems and works on solutions with minimal guidance. He's especially strong in AI, always keeping up with the latest developments and finding practical ways to apply what he learns. He's a fast learner, highly capable, and someone I'd confidently recommend to any team."
 
 ### gear-computers
 
