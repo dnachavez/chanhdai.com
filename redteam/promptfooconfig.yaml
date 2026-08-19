@@ -8,21 +8,13 @@ description: Chat widget injection regression suite (deterministic, no LLM gradi
 # redteam.yaml, which is a different job with different economics.
 
 providers:
-  - id: https
+  # Custom provider rather than the built-in `https` one: this route needs a
+  # different request shape for single-turn and multi-turn tests, and speaks a
+  # stream format promptfoo does not parse. See target.mjs.
+  - id: file://target.mjs
     label: chat-api
     config:
-      url: '{{ env.PROMPTFOO_TARGET_URL | default("http://localhost:3000/api/chat") }}'
-      method: POST
-      headers:
-        Content-Type: application/json
-        # The route's per-IP limiter reads x-forwarded-for and trusts the first
-        # entry — by design; it is documented there as a courtesy control rather
-        # than a security boundary. A distinct address per test is what keeps a
-        # 30-case suite from spending 20 requests and then grading ten 429s as
-        # passes. Nothing about the model's behaviour changes.
-        x-forwarded-for: "10.{{ range(0, 255) | random }}.{{ range(0, 255) | random }}.{{ range(1, 254) | random }}"
-      transformRequest: file://target.js:transformRequest
-      transformResponse: file://target.js:transformResponse
+      url: "{{ env.PROMPTFOO_TARGET_URL | default('http://localhost:3000/api/chat') }}"
 
 # Applied to every case below. A payload that dodges the canary but dumps the
 # prompt, or declines correctly but drops out of first person, is still a finding.

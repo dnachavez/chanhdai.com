@@ -22,16 +22,13 @@ description: Chat widget generated adversarial coverage (multi-turn)
 # Run on its own day, not alongside the single-turn scan.
 
 targets:
-  - id: https
+  # Custom provider rather than the built-in `https` one: this route needs a
+  # different request shape for single-turn and multi-turn tests, and speaks a
+  # stream format promptfoo does not parse. See target.mjs.
+  - id: file://target.mjs
     label: chat-api
     config:
-      url: '{{ env.PROMPTFOO_TARGET_URL | default("http://localhost:3000/api/chat") }}'
-      method: POST
-      headers:
-        Content-Type: application/json
-        x-forwarded-for: "10.{{ range(0, 255) | random }}.{{ range(0, 255) | random }}.{{ range(1, 254) | random }}"
-      transformRequest: file://target.js:transformRequest
-      transformResponse: file://target.js:transformResponse
+      url: "{{ env.PROMPTFOO_TARGET_URL | default('http://localhost:3000/api/chat') }}"
 
 defaultTest:
   assert:
