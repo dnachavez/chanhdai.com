@@ -45,3 +45,9 @@ next-env.d.ts
 # ncdai
 .ncdai
 .env*.local
+
+# red team
+redteam/.system-prompt.txt
+redteam/output.json
+redteam/regression.json
+redteam/output-multiturn.json

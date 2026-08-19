@@ -15,6 +15,18 @@ const eslintConfig = defineConfig([
       "@next/next/no-img-element": "off",
     },
   },
+  {
+    /**
+     * Loaded by promptfoo's own CommonJS require, not by the Next build, so
+     * `require` and `module.exports` are the calling convention rather than a
+     * lapse. Scoped to the assertion and adapter files so nothing else in the
+     * repository inherits the exemption.
+     */
+    files: ["redteam/**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

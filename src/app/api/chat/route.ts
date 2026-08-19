@@ -3,6 +3,7 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
+  wrapLanguageModel,
   type UIMessage,
 } from "ai"
 import { z } from "zod"
@@ -18,6 +19,10 @@ import {
   MAX_TURNS_PER_SESSION,
 } from "@/features/chat/config"
 import { deriveHighlights } from "@/features/chat/lib/derive-highlights"
+import {
+  createOutputTripwire,
+  type TripwireHit,
+} from "@/features/chat/lib/output-tripwire"
 import { checkRateLimit, getClientIp } from "@/features/chat/lib/rate-limit"
 import { suggestionsFrom } from "@/features/chat/lib/suggest-follow-ups"
 import { buildSystemPrompt } from "@/features/chat/lib/system-prompt"
@@ -48,10 +53,19 @@ export const maxDuration = 60
  * it is used, matching the guard below — a module-level client would capture an
  * undefined key at import time and fail later with something less legible.
  */
-function model() {
-  return createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
-    CHAT_MODEL
-  )
+function model(onTrip: (hit: TripwireHit) => void) {
+  return wrapLanguageModel({
+    model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
+      CHAT_MODEL
+    ),
+    /**
+     * Wraps the model rather than post-processing the stream in this file, so it
+     * also covers the fallback model — `providerOptions.openrouter.models` routes
+     * onward inside the same request, and a check written against the response
+     * here would never know which of the two answered.
+     */
+    middleware: createOutputTripwire({ onTrip }),
+  })
 }
 
 /**
@@ -176,8 +190,23 @@ export async function POST(request: Request) {
 
   const recent = pruneHistory(messages) as unknown as UIMessage[]
 
+  /**
+   * A trip is a successful injection reaching production, which is the one event
+   * here worth waking up for — it means both the system prompt and whatever the
+   * regression suite last asserted were insufficient against a live payload. The
+   * question that caused it is logged with it, because the payload is the finding;
+   * it goes straight into `redteam/promptfooconfig.yaml` as a new case.
+   */
+  const onTrip = (hit: TripwireHit) => {
+    console.error("[chat] output tripwire", {
+      kind: hit.kind,
+      marker: hit.marker,
+      question: asked.at(-1)?.slice(0, MAX_MESSAGE_LENGTH),
+    })
+  }
+
   const result = streamText({
-    model: model(),
+    model: model(onTrip),
     system: buildSystemPrompt(),
     messages: await convertToModelMessages(recent),
     tools: createChatTools({

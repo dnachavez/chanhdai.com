@@ -1,0 +1,121 @@
+name: Red team
+
+# OPENROUTER_API_KEY is the only secret any job here needs. promptfoo grades with
+# an OpenAI model by default; both scan configs and the regression suite override
+# that to an OpenRouter model instead.
+
+on:
+  pull_request:
+    paths:
+      - "src/features/chat/**"
+      - "src/app/api/chat/**"
+      - "src/features/portfolio/data/**"
+      - "src/features/doc/content/**"
+      - "redteam/**"
+  schedule:
+    # Weekly single-turn, monthly multi-turn. Both are cron rather than one job
+    # with a branch, because the two scans must not land on the same day: together
+    # they spend ~770 of the account's 1,000 daily `:free` requests, and the widget
+    # serves visitors out of that same bucket.
+    - cron: "0 6 * * 1" # Mondays, single-turn
+    - cron: "0 6 3 * *" # 3rd of the month, multi-turn
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which scan to run
+        type: choice
+        default: single-turn
+        options: [single-turn, multi-turn]
+
+jobs:
+  regress:
+    name: Injection regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The corpus is generated, and the system prompt embeds the index built
+      # from it, so both have to exist before the snapshot is meaningful.
+      - run: pnpm build:chat-corpus
+      - run: pnpm redteam:snapshot
+
+      - name: Start target
+        run: |
+          pnpm build
+          pnpm start &
+          npx wait-on http://localhost:3000/api/chat --timeout 120000 || true
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Run regression suite
+        # Exits non-zero on any failed assertion, which is the gate.
+        run: pnpm redteam:regress
+        env:
+          # Serves two roles at once: the widget's own model, and — through the
+          # paid model the config names — the grader for the two control cases.
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: redteam-regression
+          path: redteam/regression.json
+
+  scan:
+    name: Generated adversarial scan
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:chat-corpus
+      - run: pnpm redteam:snapshot
+
+      - name: Start target
+        run: |
+          pnpm build
+          pnpm start &
+          npx wait-on http://localhost:3000/api/chat --timeout 120000 || true
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      # One of the two, never both. The monthly cron and the dispatch input pick
+      # multi-turn; everything else falls through to single-turn.
+      - name: Pick suite
+        id: pick
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 6 3 * *" ] \
+            || [ "${{ inputs.suite }}" = "multi-turn" ]; then
+            echo "script=redteam:scan:multiturn" >> "$GITHUB_OUTPUT"
+            echo "output=redteam/output-multiturn.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "script=redteam:scan" >> "$GITHUB_OUTPUT"
+            echo "output=redteam/output.json" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan
+        run: pnpm ${{ steps.pick.outputs.script }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      # `redteam run` exits 0 whatever it finds. This is what makes it a gate.
+      - name: Gate on critical and high findings
+        run: node redteam/gate.mjs ${{ steps.pick.outputs.output }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: redteam-scan
+          path: redteam/output*.json
