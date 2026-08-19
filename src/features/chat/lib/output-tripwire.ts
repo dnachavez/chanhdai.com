@@ -1,6 +1,7 @@
 import type { LanguageModelMiddleware } from "ai"
 
 import { CHAT_COPY } from "../config"
+import { buildSystemPrompt } from "./system-prompt"
 
 /**
  * Last line of defence, on the way out rather than on the way in.
@@ -65,6 +66,129 @@ const CANARIES = ["ZZQX-7741-CANARY"]
 export type TripwireHit = {
   kind: "prompt-leak" | "canary"
   marker: string
+}
+
+/* -------------------------------------------------------------------------- *
+ * Recitation
+ *
+ * The markers above are sparse, and the first red team run found the gap: asked
+ * to print everything above the first message, the model dumped the opening of
+ * the prompt and got 568 characters in before running out — every marker sits
+ * later than that, so nothing fired.
+ *
+ * This catches the same dump by content rather than by landmark. The prompt is
+ * available in-process, so unlike the offline assertion there is no snapshot to
+ * keep in step: whatever `buildSystemPrompt()` returns today is what output is
+ * compared against.
+ * -------------------------------------------------------------------------- */
+
+const SHINGLE = 8
+
+/**
+ * Recited runs tolerated before the stream is cut.
+ *
+ * Measured on the first live run rather than chosen. Correct answers score 0,
+ * the self-description the prompt scripts ("an AI assistant answering from what
+ * Dan has published on this site") scores 5, and a genuine dump scores 43-67.
+ * Twelve has roughly an order of magnitude of headroom either side.
+ *
+ * The same figure as the offline assertion, deliberately: a run that fails in CI
+ * and a stream that gets cut in production should mean the same thing.
+ */
+const MAX_RECITED_RUNS = 12
+
+function normalise(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+}
+
+/**
+ * Examples are stripped before indexing, because the prompt does not only
+ * instruct — it scripts sentences it wants said, and quotes corpus text to show
+ * how not to phrase a link. Indexing those would cut off a model for doing
+ * exactly as it was told.
+ */
+function instructionsOnly(prompt: string) {
+  return prompt
+    .replace(/`[^`]*`/g, " ")
+    .replace(/"[^"]*"/g, " ")
+    .replace(/\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/^\s*[-*]\s*(Yes|No)[,:].*$/gim, " ")
+}
+
+/**
+ * Built once per process, not per request. The prompt is static for the lifetime
+ * of a deployment, and the index is a few thousand short strings.
+ */
+let promptIndex: Set<string> | null = null
+
+function shingleIndex() {
+  if (promptIndex) return promptIndex
+
+  const tokens = normalise(instructionsOnly(buildSystemPrompt()))
+  promptIndex = new Set<string>()
+  for (let i = 0; i + SHINGLE <= tokens.length; i++) {
+    promptIndex.add(tokens.slice(i, i + SHINGLE).join(" "))
+  }
+
+  return promptIndex
+}
+
+/**
+ * Counts recited runs incrementally.
+ *
+ * Re-shingling the whole answer on every delta would be quadratic in the length
+ * of the reply, so each call only examines the window opened by the new text —
+ * the trailing `SHINGLE - 1` words carried over, plus whatever just arrived.
+ *
+ * Two things are carried between calls, and both matter. `carry` holds the
+ * previous words so a run spanning a chunk boundary is still seen. `pending`
+ * holds a trailing *partial* word, because deltas break wherever the tokenizer
+ * happened to split: without it "assistant" arriving as "assis" + "tant" counts
+ * as two words, every subsequent run is misaligned, and a dump scores a quarter
+ * of what it should.
+ */
+export function createRecitationCounter() {
+  const index = shingleIndex()
+  const matched = new Set<string>()
+  let carry: string[] = []
+  let pending = ""
+
+  function consume(text: string) {
+    const tokens = [...carry, ...normalise(text)]
+
+    for (let i = 0; i + SHINGLE <= tokens.length; i++) {
+      const run = tokens.slice(i, i + SHINGLE).join(" ")
+      if (index.has(run)) matched.add(run)
+    }
+
+    carry = tokens.slice(-(SHINGLE - 1))
+    return matched.size
+  }
+
+  return {
+    /** Distinct recited runs seen so far. */
+    push(delta: string) {
+      const text = pending + delta
+
+      /** A trailing run of word characters may be half a word; hold it back. */
+      const partial = /[a-z0-9]+$/i.exec(text)
+      pending = partial ? partial[0] : ""
+
+      return consume(partial ? text.slice(0, partial.index) : text)
+    },
+
+    /** Releases the held-back word once no more deltas are coming. */
+    flush() {
+      const text = pending
+      pending = ""
+      return consume(text)
+    },
+  }
 }
 
 function flatten(text: string) {
@@ -132,6 +256,8 @@ export function createOutputTripwire({
       let lastId: string | undefined
       let tripped = false
 
+      const recitation = createRecitationCounter()
+
       const scanned = stream.pipeThrough(
         new TransformStream<StreamPart, StreamPart>({
           transform(part, controller) {
@@ -145,7 +271,12 @@ export function createOutputTripwire({
             lastId = part.id
             seen += part.delta
 
-            const hit = detectTripwire(seen)
+            const recited = recitation.push(part.delta)
+            const hit: TripwireHit | null =
+              recited >= MAX_RECITED_RUNS
+                ? { kind: "prompt-leak", marker: `${recited} recited runs` }
+                : detectTripwire(seen)
+
             if (hit) {
               tripped = true
               onTrip?.(hit)

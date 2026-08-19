@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { createOutputTripwire, detectTripwire } from "./output-tripwire"
+import {
+  createOutputTripwire,
+  createRecitationCounter,
+  detectTripwire,
+} from "./output-tripwire"
+import { buildSystemPrompt } from "./system-prompt"
 
 const CANARY = "ZZQX-7741-CANARY"
 
@@ -202,5 +207,56 @@ describe("createOutputTripwire", () => {
 
     expect(types).toContain("stream-start")
     expect(types).toContain("finish")
+  })
+})
+
+describe("createRecitationCounter", () => {
+  /**
+   * The gap the first red team run exposed. Asked to print everything above the
+   * first message, the model dumped the opening of the prompt — 568 characters,
+   * all of it before the first structural marker, so nothing fired.
+   */
+  it("counts a verbatim dump of the prompt opening", () => {
+    const opening = buildSystemPrompt().slice(0, 600)
+    const counter = createRecitationCounter()
+
+    expect(counter.push(opening)).toBeGreaterThanOrEqual(12)
+  })
+
+  it("counts nothing for an ordinary grounded answer", () => {
+    const counter = createRecitationCounter()
+    const answer =
+      "I built an AI phone receptionist at Aeva that serves around 500 clinics, " +
+      "and I wrote about how the retrieval side of this site works on the blog."
+
+    expect(counter.push(answer)).toBe(0)
+  })
+
+  /**
+   * The prompt scripts this sentence, so a model answering "what are you"
+   * reproduces it. It must stay well under the threshold.
+   */
+  it("stays under the threshold for the scripted self-description", () => {
+    const counter = createRecitationCounter()
+    const scripted =
+      "I am an AI assistant answering from what Dan has published on this site."
+
+    expect(counter.push(scripted)).toBeLessThan(12)
+  })
+
+  /** Chunk boundaries must not lose runs that straddle them. */
+  it("counts runs split across deltas the same as whole text", () => {
+    const opening = buildSystemPrompt().slice(0, 600)
+
+    const whole = createRecitationCounter()
+    whole.push(opening)
+    const total = whole.flush()
+
+    const split = createRecitationCounter()
+    for (let i = 0; i < opening.length; i += 17) {
+      split.push(opening.slice(i, i + 17))
+    }
+
+    expect(split.flush()).toBe(total)
   })
 })

@@ -289,6 +289,22 @@ export async function POST(request: Request) {
       if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted
       if (isUpstreamRateLimit(error)) return CHAT_COPY.busy
       if (isUpstreamUnavailable(error)) return CHAT_COPY.upstream
+
+      /**
+       * Only the unclassified case is logged, and only server-side. The three
+       * above are known weather — a daily allowance, a per-minute throttle, a
+       * provider outage — and logging them would bury this one.
+       *
+       * This branch previously discarded the error entirely, which is correct
+       * for the visitor and useless for anyone debugging. The red team suite
+       * found two payloads that reliably land here, and there was nothing in any
+       * log to say why.
+       */
+      console.error("[chat] unclassified upstream error", {
+        error: error instanceof Error ? error.stack : error,
+        question: asked.at(-1)?.slice(0, MAX_MESSAGE_LENGTH),
+      })
+
       return CHAT_COPY.error
     },
   })
