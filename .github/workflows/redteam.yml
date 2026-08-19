@@ -1,21 +1,23 @@
 name: Red team
 
 # OPENROUTER_API_KEY is the only secret any job here needs. promptfoo grades with
-# an OpenAI model by default; both scan configs and the regression suite override
-# that to an OpenRouter model instead.
+# an OpenAI model by default; all three configs override that to an OpenRouter
+# model, so no second provider account is involved.
 
 on:
   pull_request:
+    branches: [main]
     paths:
       - "src/features/chat/**"
       - "src/app/api/chat/**"
       - "src/features/portfolio/data/**"
       - "src/features/doc/content/**"
       - "redteam/**"
+      - ".github/workflows/redteam.yml"
   schedule:
-    # Weekly single-turn, monthly multi-turn. Both are cron rather than one job
-    # with a branch, because the two scans must not land on the same day: together
-    # they spend ~770 of the account's 1,000 daily `:free` requests, and the widget
+    # Weekly single-turn, monthly multi-turn. Two crons rather than one job with a
+    # branch, because the two scans must not land on the same day: together they
+    # spend ~770 of the account's 1,000 daily `:free` requests, and the widget
     # serves visitors out of that same bucket.
     - cron: "0 6 * * 1" # Mondays, single-turn
     - cron: "0 6 3 * *" # 3rd of the month, multi-turn
@@ -27,29 +29,53 @@ on:
         default: single-turn
         options: [single-turn, multi-turn]
 
+concurrency:
+  group: redteam-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Public, non-secret API base read at build/prerender time by
+  # src/features/portfolio/data/github-contributions.ts, which has NO fallback for
+  # it — without this the prerender of `/` throws on `undefined/v4/...` and the
+  # target never starts. Same value and same reason as ci.yml.
+  GITHUB_CONTRIBUTIONS_API_URL: https://github-contributions-api.jogruber.de
+
 jobs:
   regress:
     name: Injection regression
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      # The corpus is generated, and the system prompt embeds the index built
-      # from it, so both have to exist before the snapshot is meaningful.
-      - run: pnpm build:chat-corpus
-      - run: pnpm redteam:snapshot
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.5.3
+
+      - name: Install Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The system prompt embeds the index built from the corpus, so the corpus
+      # has to exist before the snapshot means anything. `pnpm build` below runs
+      # this again; it is cheap and ordering matters more than the duplication.
+      - name: Build chat corpus
+        run: pnpm build:chat-corpus
+
+      - name: Snapshot system prompt
+        run: pnpm redteam:snapshot
 
       - name: Start target
         run: |
           pnpm build
           pnpm start &
-          npx wait-on http://localhost:3000/api/chat --timeout 120000 || true
+          npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
@@ -57,37 +83,52 @@ jobs:
         # Exits non-zero on any failed assertion, which is the gate.
         run: pnpm redteam:regress
         env:
-          # Serves two roles at once: the widget's own model, and — through the
-          # paid model the config names — the grader for the two control cases.
+          # Two roles at once: the widget's own model, and — through the paid
+          # model the config names — the grader for the two control cases.
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: redteam-regression
           path: redteam/regression.json
+          if-no-files-found: ignore
 
   scan:
     name: Generated adversarial scan
+    # Never on a pull request: one scan is ~576 requests, 58% of the account's
+    # daily free allowance, and the widget is serving visitors from it.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
-          node-version: 24
+          version: 11.5.3
+
+      - name: Install Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build:chat-corpus
-      - run: pnpm redteam:snapshot
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build chat corpus
+        run: pnpm build:chat-corpus
+
+      - name: Snapshot system prompt
+        run: pnpm redteam:snapshot
 
       - name: Start target
         run: |
           pnpm build
           pnpm start &
-          npx wait-on http://localhost:3000/api/chat --timeout 120000 || true
+          npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
@@ -114,8 +155,9 @@ jobs:
       - name: Gate on critical and high findings
         run: node redteam/gate.mjs ${{ steps.pick.outputs.output }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: redteam-scan
           path: redteam/output*.json
+          if-no-files-found: ignore
