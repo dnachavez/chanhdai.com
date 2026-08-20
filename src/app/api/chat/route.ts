@@ -237,24 +237,7 @@ export async function POST(request: Request) {
      * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: {
-        models: [CHAT_MODEL, FALLBACK_MODEL],
-        /**
-         * Nemotron reasons, and it does not reliably keep that reasoning on the
-         * channel meant for it — the red team suite caught replies opening "We
-         * need to decode the base64 string" and "We must follow the rules: we are
-         * Dan", reciting the system prompt on the way through. `sendReasoning:
-         * false` and `stripReasoningArtifacts` both miss it, because neither is
-         * looking at plain prose with no marker around it.
-         *
-         * Asking the provider not to return reasoning at all is the only lever
-         * that acts before the text exists. Whether it helps depends on the
-         * provider separating the two channels for this model in the first
-         * place; if narration survives this, the model is the problem and the
-         * answer is a different one, not more prompt text.
-         */
-        reasoning: { exclude: true },
-      },
+      openrouter: { models: [CHAT_MODEL, FALLBACK_MODEL] },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
