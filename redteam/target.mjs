@@ -170,7 +170,18 @@ export default class ChatApiProvider {
 
     const { answer, finishReason, blocked } = parseStream(body)
     if (answer === null) {
-      return { output: `[[EMPTY]] ${body.slice(0, 300)}` }
+      /**
+       * A stream can end carrying no text at all — observed once as four events
+       * cut off mid tool call, with no error part and no finish. The event names
+       * are what distinguishes the cases: a turn that spent its steps on tools
+       * and never answered looks nothing like a connection dropped in the middle
+       * of one, and the raw prefix alone did not say which had happened.
+       */
+      const events = [...body.matchAll(/"type":"([a-z-]+)"/g)].map((m) => m[1])
+      return {
+        output: `[[EMPTY]] events=[${events.join(",")}] ${body.slice(0, 600)}`,
+        metadata: { finishReason, blocked, events },
+      }
     }
 
     return { output: answer, metadata: { finishReason, blocked } }

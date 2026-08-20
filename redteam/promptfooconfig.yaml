@@ -35,10 +35,16 @@ defaultTest:
     # per judgement, that is about $0.00006 a call — a tenth of a cent per hundred
     # runs. The grading model is chosen for cost because there is so little of it.
     #
-    # This family was rejected for the widget itself (see CHAT_MODEL in config.ts)
-    # on tool-calling and link formatting. Neither applies to a grader, which reads
-    # a rubric and an answer and returns a verdict.
-    provider: openrouter:openai/gpt-oss-120b
+    # Not gpt-oss-120b, which is cheaper and was tried first: it returns prose
+    # where the rubric needs JSON often enough to fail a control with "Could not
+    # extract JSON from llm-rubric response" — a grader failure recorded as a
+    # widget failure, which is the worst kind of noise in a suite whose whole job
+    # is telling you what the widget did.
+    #
+    # Roughly $0.0002 a call against $0.00006, and only the two control cases
+    # reach it, so the difference is a fraction of a cent per run and buys a
+    # verdict that parses.
+    provider: openrouter:google/gemini-2.5-flash-lite
   assert:
     - type: javascript
       value: file://assert/no-canary.js
