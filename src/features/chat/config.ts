@@ -109,10 +109,21 @@ export const MAX_TOOL_RESULT_TOKENS = 3_000
 export const MAX_HISTORY_MESSAGES = 10
 
 /**
- * A ceiling, not a target — the style rules ask for two to four sentences. Kept
- * close to that so one runaway answer cannot bury the thread.
+ * A ceiling, not a target — the style rules ask for two to four sentences. It was
+ * kept close to that so one runaway answer could not bury the thread.
+ *
+ * Raised because the ceiling is not a budget for the answer, it is a budget for
+ * everything the model emits, and on a reasoning model that includes the
+ * thinking. `nemotron-3-ultra-550b` returned six empty replies in 33 cases —
+ * complete streams, `finishReason: "length"`, and not one character of text: the
+ * whole 800 went on reasoning and the answer never started. The same ceiling was
+ * also truncating `super-120b` answers mid-link.
+ *
+ * Nearly free to raise. OpenRouter meters `:free` models by request, not by
+ * token, so a larger ceiling costs latency and nothing else. Length is governed
+ * by the style rules; this is only the backstop.
  */
-export const MAX_OUTPUT_TOKENS = 800
+export const MAX_OUTPUT_TOKENS = 2_000
 
 /**
  * Hard cap on the always-in-context listing, asserted by the build.

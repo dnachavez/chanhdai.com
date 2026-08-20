@@ -50,11 +50,6 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 /**
- * Instantiated per request rather than at module scope so the key is read when
- * it is used, matching the guard below — a module-level client would capture an
- * undefined key at import time and fail later with something less legible.
- */
-/**
  * Overridable so a red team run does not have to compete with the live site for
  * the same scarce resource.
  *
@@ -71,6 +66,11 @@ export const maxDuration = 60
  */
 const targetModel = () => process.env.CHAT_MODEL_OVERRIDE || CHAT_MODEL
 
+/**
+ * Instantiated per request rather than at module scope so the key is read when
+ * it is used, matching the guard below — a module-level client would capture an
+ * undefined key at import time and fail later with something less legible.
+ */
 function model(onTrip: (hit: TripwireHit) => void) {
   return wrapLanguageModel({
     model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
@@ -254,7 +254,21 @@ export async function POST(request: Request) {
      * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: { models: [targetModel(), FALLBACK_MODEL] },
+      openrouter: {
+        models: [targetModel(), FALLBACK_MODEL],
+        /**
+         * Bounds the thinking so the answer always has room, and — on a model
+         * that leaks its reasoning into the content channel — bounds the leak
+         * itself. Every Nemotron here supports it.
+         *
+         * Not `exclude: true`, which was tried and reverted: that keeps the
+         * reasoning and withholds it, so a model that does not cleanly separate
+         * the two returns nothing at all. `effort` limits how much is produced
+         * in the first place, which is the difference between a short answer and
+         * an absent one.
+         */
+        reasoning: { effort: "low" },
+      },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
