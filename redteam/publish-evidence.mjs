@@ -10,7 +10,7 @@
  */
 import fs from "node:fs"
 
-import { publishCheck, summarise, upsertEvidence } from "./evidence.mjs"
+import { postEvidence, publishCheck, summarise } from "./evidence.mjs"
 
 const {
   GITHUB_REPOSITORY: repo,
@@ -48,7 +48,7 @@ const evidence = {
   ranAt: new Date().toISOString(),
 }
 
-await upsertEvidence(repo, prNumber, evidence)
+await postEvidence(repo, prNumber, evidence)
 
 await publishCheck(repo, headSha, {
   conclusion: failed === 0 ? "success" : "failure",

@@ -13,10 +13,14 @@
  * longer matches and the check says so until someone asks for another scan.
  *
  * The shape is borrowed from the adversarial review in aeva-website, minus the
- * parts this repository has no use for — no publisher signatures, no
- * adjudication, one comment rather than a durable record. What is kept is the
- * part that matters: evidence binds to a SHA, and the check reflects the
- * evidence rather than the run.
+ * parts this repository has no use for — no publisher signatures and no
+ * adjudication. What is kept is the part that matters: evidence binds to a SHA,
+ * and the check reflects the evidence rather than the run.
+ *
+ * Each scan posts its own comment. An earlier version rewrote a single one in
+ * place, which kept the pull request tidy at the cost of the only record of what
+ * a change had actually fixed — six findings and none left the same comment
+ * behind. The newest comment is the one the check reads.
  */
 
 export const MARKER = "<!-- redteam-scan-evidence -->"
@@ -124,40 +128,57 @@ export function parseEvidence(body) {
   }
 }
 
+/**
+ * The *most recent* evidence comment, which since scans stopped overwriting each
+ * other is no longer the same thing as the first one found.
+ *
+ * Every page is walked and the last match wins. Returning early on the first hit
+ * would return the oldest scan on the pull request — evidence for a commit
+ * several pushes back — and the check would then compare that stale sha against
+ * the head and report "not scanned" for a revision that had just been scanned.
+ * The endpoint returns issue comments oldest-first and takes no sort parameter,
+ * so last-match-wins is the ordering available.
+ *
+ * Paged deliberately: a busy pull request can push the evidence past the first
+ * page, and a missed comment reads as "never scanned" and prompts a re-run of
+ * the one thing this file exists to avoid re-running.
+ */
 export async function findEvidenceComment(repo, prNumber) {
-  /**
-   * Paged deliberately: a busy pull request can push the evidence past the first
-   * page, and a missed comment reads as "never scanned" and prompts a re-run of
-   * the one thing this file exists to avoid re-running.
-   */
+  let latest = null
+
   for (let page = 1; page <= 10; page++) {
     const comments = await github(
       `/repos/${repo}/issues/${prNumber}/comments?per_page=100&page=${page}`
     )
-    if (!comments.length) return null
+    if (!comments.length) break
 
-    const found = comments.find((comment) => comment.body?.includes(MARKER))
-    if (found) return found
-    if (comments.length < 100) return null
+    for (const comment of comments) {
+      if (comment.body?.includes(MARKER)) latest = comment
+    }
+
+    if (comments.length < 100) break
   }
 
-  return null
+  return latest
 }
 
-export async function upsertEvidence(repo, prNumber, evidence) {
-  const body = renderEvidence(evidence)
-  const existing = await findEvidenceComment(repo, prNumber)
-
-  if (existing) {
-    return github(`/repos/${repo}/issues/comments/${existing.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ body }),
-    })
-  }
-
+/**
+ * Posts a new comment per scan rather than rewriting one in place.
+ *
+ * Overwriting made the pull request lose its own history: a scan that found six
+ * things and a scan that found none left the same single comment behind, so
+ * there was no way to read back what a change actually fixed, and a finding
+ * withdrawn as grader noise looked identical to one that had never been found.
+ * The check run is bound to a sha and stays authoritative for whether *this*
+ * revision is clean; the comments are the trail of how it got there.
+ *
+ * The cost is that a long-lived pull request accumulates them. That is the
+ * intended trade: they are cheap, and `findEvidenceComment` reads the newest.
+ */
+export async function postEvidence(repo, prNumber, evidence) {
   return github(`/repos/${repo}/issues/${prNumber}/comments`, {
     method: "POST",
-    body: JSON.stringify({ body }),
+    body: JSON.stringify({ body: renderEvidence(evidence) }),
   })
 }
 

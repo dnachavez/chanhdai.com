@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { parseEvidence, renderEvidence, summarise } from "./evidence.mjs"
+import {
+  findEvidenceComment,
+  MARKER,
+  parseEvidence,
+  renderEvidence,
+  summarise,
+} from "./evidence.mjs"
 
 /**
  * The evidence is the only thing standing between "this revision was scanned"
@@ -109,5 +115,64 @@ describe("summarise", () => {
       failed: 0,
       findings: [],
     })
+  })
+})
+
+/**
+ * Since each scan posts its own comment, "the evidence" is specifically the
+ * newest one. Reading the oldest instead reports a commit several pushes back as
+ * the scanned revision, which fails open in the one direction that matters: the
+ * check would call a stale sha current.
+ */
+describe("findEvidenceComment", () => {
+  const comment = (id, body) => ({ id, body })
+  const evidenceFor = (sha) =>
+    `${MARKER}\n\n\`\`\`json\n{"headSha":"${sha}"}\n\`\`\``
+
+  function mockPages(...pages) {
+    process.env.GITHUB_TOKEN = "test-token"
+    let call = 0
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => pages[call++] ?? [],
+      }))
+    )
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("returns the newest evidence comment, not the first", async () => {
+    mockPages([
+      comment(1, evidenceFor("aaaaaaa")),
+      comment(2, "an unrelated comment"),
+      comment(3, evidenceFor("bbbbbbb")),
+    ])
+
+    const found = await findEvidenceComment("owner/repo", 23)
+
+    expect(parseEvidence(found.body).headSha).toBe("bbbbbbb")
+  })
+
+  it("keeps looking past a full page for a later one", async () => {
+    const filler = Array.from({ length: 100 }, (_, i) => comment(i, "chatter"))
+    mockPages(
+      [comment(-1, evidenceFor("aaaaaaa")), ...filler.slice(1)],
+      [comment(200, evidenceFor("ccccccc"))]
+    )
+
+    const found = await findEvidenceComment("owner/repo", 23)
+
+    expect(parseEvidence(found.body).headSha).toBe("ccccccc")
+  })
+
+  it("is null when nothing on the pull request is evidence", async () => {
+    mockPages([comment(1, "chatter"), comment(2, "more chatter")])
+
+    expect(await findEvidenceComment("owner/repo", 23)).toBeNull()
   })
 })

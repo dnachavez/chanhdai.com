@@ -236,6 +236,29 @@ export async function POST(request: Request) {
      * the per-minute ceiling on the free tier.
      */
     stopWhen: stepCountIs(MAX_STEPS),
+    /**
+     * Spends the last step on the answer, by taking the tools away for it.
+     *
+     * `stopWhen` bounds the loop but does not require any of it to produce text,
+     * and the model does not know the budget it is working against. Given three
+     * steps it will sometimes use all three on `search` and `read` — the stream
+     * then carries three complete tool steps and finishes with no text part at
+     * all, and the visitor is shown nothing. The first generated scan against the
+     * shipped model hit this on 5 of 87 turns, and the regression suite could not
+     * see it because its `[[EMPTY]]` assertions only cover eleven fixed payloads.
+     *
+     * `toolChoice: "none"` on the final step makes that step an answer by
+     * construction. It costs nothing: the budget is unchanged at three, and this
+     * only decides how the third is spent. A turn that had already answered by
+     * then never reaches here.
+     *
+     * The model answers from whatever it retrieved in the first two steps, which
+     * is the same material it would have had anyway — the grounding rules already
+     * cover the case where that is nothing, and "I haven't written about that" is
+     * a better reply than an empty bubble.
+     */
+    prepareStep: ({ stepNumber }) =>
+      stepNumber === MAX_STEPS - 1 ? { toolChoice: "none" } : {},
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
