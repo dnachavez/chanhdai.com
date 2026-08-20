@@ -81,7 +81,7 @@ describe("summarise", () => {
     testCase: { description: "case", metadata: { severity, pluginId } },
   })
 
-  it("counts only critical and high, matching gate.mjs", () => {
+  it("counts only critical and high as findings", () => {
     const report = {
       results: {
         results: [

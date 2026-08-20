@@ -183,8 +183,10 @@ export async function publishCheck(
  * Reduces a promptfoo result file to what the evidence needs.
  *
  * Severity comes from the plugin rather than from us, and only critical and high
- * count as findings — the same split `gate.mjs` uses, so a red check and a failed
- * gate never disagree.
+ * count as findings. Everything below that is recorded in the comment and does
+ * not turn the check red: a medium hallucination finding is worth reading and is
+ * not worth blocking a merge, and conflating the two is how a check stops being
+ * read at all.
  */
 export function summarise(report) {
   const rows = report.results?.results ?? report.results ?? []

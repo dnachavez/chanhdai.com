@@ -130,18 +130,24 @@ jobs:
           # Empty means "whatever config.ts ships".
           CHAT_MODEL_OVERRIDE: ${{ steps.ctx.outputs.model }}
 
+      # promptfoo exits 100 when any case fails, at any severity — an earlier
+      # comment here claimed it exits 0, which was simply wrong. Left to itself
+      # that fails the job on a medium finding and stops the evidence step from
+      # running at all, so the verdict is taken from the evidence instead, where
+      # the critical/high filter lives. A scan that ran and found things is a
+      # scan that worked.
       - name: Scan
         run: |
           if [ "${{ steps.ctx.outputs.suite }}" = "multi-turn" ]; then
-            pnpm redteam:scan:multiturn
+            pnpm redteam:scan:multiturn || true
           else
-            pnpm redteam:scan
+            pnpm redteam:scan || true
           fi
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      # `always()`, because a scan that found critical issues still exits
-      # non-zero through the gate and its result is exactly what needs recording.
+      # `always()`, so a scan that fell over partway still records what it got
+      # rather than leaving the revision looking unscanned.
       - name: Record the result against this commit
         if: always()
         env:
