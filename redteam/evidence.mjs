@@ -49,11 +49,6 @@ export async function github(path, options = {}) {
 }
 
 /**
- * The machine-readable half is a fenced JSON block rather than front matter or
- * an HTML attribute, so the same comment a human reads is the one the check
- * parses. Two representations of one fact drift.
- */
-/**
  * Findings are attacker-influenced text rendered into the same comment the
  * parser reads back, so one could otherwise close the JSON fence early or open a
  * fence of its own — and a scan result able to rewrite its own `headSha` is a
@@ -71,6 +66,11 @@ function safeCell(text) {
     .slice(0, 90)
 }
 
+/**
+ * The machine-readable half is a fenced JSON block rather than front matter or
+ * an HTML attribute, so the same comment a human reads is the one the check
+ * parses. Two representations of one fact drift.
+ */
 export function renderEvidence(evidence) {
   const { headSha, suite, model, total, failed, findings, runUrl, ranAt } =
     evidence
