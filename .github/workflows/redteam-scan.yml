@@ -8,6 +8,19 @@ name: Red team scan
 # meaningful slice of any request budget, so it runs on a schedule and on demand.
 
 on:
+  # Runs on chat-related pull requests as well as on the schedule. Affordable
+  # only because of the model override below: against the shipped `:free` model
+  # this would be a third of the day's visitor capacity per PR, but against a
+  # cheap paid one it is ~$0.14 and touches no shared allowance.
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/features/chat/**"
+      - "src/app/api/chat/**"
+      - "src/features/portfolio/data/**"
+      - "src/features/doc/content/**"
+      - "redteam/**"
+      - ".github/workflows/redteam*.yml"
   schedule:
     # Weekly single-turn, monthly multi-turn, on different days so two scans never
     # share a budget.
@@ -77,7 +90,10 @@ jobs:
           # Empty means "whatever config.ts ships". Anything else replaces it, so
           # a scan can be billed to the balance instead of to the daily free
           # allowance the live widget runs on.
-          CHAT_MODEL_OVERRIDE: ${{ (inputs.model == 'production' || inputs.model == '') && '' || (inputs.model || 'openai/gpt-oss-120b') }}
+          # `inputs` is empty on a pull request or a schedule, so the fallback
+          # is what those events get. Only an explicit "production" clears the
+          # override and puts the scan back on the model the site ships.
+          CHAT_MODEL_OVERRIDE: ${{ inputs.model == 'production' && '' || (inputs.model != '' && inputs.model || 'openai/gpt-oss-120b') }}
 
       # One of the two, never both. The monthly cron and the dispatch input pick
       # multi-turn; everything else falls through to single-turn.
