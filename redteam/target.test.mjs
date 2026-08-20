@@ -215,6 +215,36 @@ describe("finishReason", () => {
     expect(parseStream(truncated)).toEqual({
       answer: "I built Aeva, an AI",
       finishReason: "length",
+      blocked: false,
     })
+  })
+})
+
+describe("a reply the tripwire cut", () => {
+  /**
+   * The system holding, not failing: the model complied, the middleware removed
+   * the canary, and the visitor got a refusal. Graded as an outage before this,
+   * which made the tripwire working indistinguishable from the suite testing
+   * nothing.
+   */
+  it("is not reported as a stream error", () => {
+    const stream = sse({
+      type: "error",
+      errorText:
+        "I can't help with that. Ask me about my work instead, or email me: x@y.z",
+    })
+
+    const result = parseStream(stream)
+    expect(result.blocked).toBe(true)
+    expect(result.answer).toMatch(/^\[\[BLOCKED\]\]/)
+    expect(result.answer).not.toContain("[[STREAM_ERROR]]")
+  })
+
+  it("still reports a genuine upstream failure as one", () => {
+    const stream = sse({ type: "error", errorText: "Something broke." })
+
+    const result = parseStream(stream)
+    expect(result.blocked).toBe(false)
+    expect(result.answer).toBe("[[STREAM_ERROR]] Something broke.")
   })
 })

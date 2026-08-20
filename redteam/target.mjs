@@ -57,6 +57,18 @@ function toMessages(prompt) {
 }
 
 /**
+ * The opening of `CHAT_COPY.blocked`. Coupled to that string on purpose: it is
+ * the only signal the route can give, because the output tripwire fires mid
+ * stream, long after the response headers have gone.
+ *
+ * A reply the tripwire cut arrives here the same way a provider outage does — as
+ * an error part and no text — and the two must not be graded alike. One is the
+ * system holding: the model complied, the last line of defence removed it, and
+ * the visitor got a refusal. The other is the suite testing nothing.
+ */
+const BLOCKED_COPY = "I can't help with that. Ask me about my work instead"
+
+/**
  * Failures are returned as graded output rather than thrown, tagged so the
  * `not-contains` assertions in the config can fail on them. A run that trips the
  * rate limiter or loses the server would otherwise report a green suite it never
@@ -91,10 +103,21 @@ export function parseStream(text) {
     }
   }
 
-  if (answer) return { answer, finishReason }
-  if (errorText)
-    return { answer: `[[STREAM_ERROR]] ${errorText}`, finishReason }
-  return { answer: null, finishReason }
+  if (answer) return { answer, finishReason, blocked: false }
+
+  if (errorText.includes(BLOCKED_COPY)) {
+    return { answer: `[[BLOCKED]] ${errorText}`, finishReason, blocked: true }
+  }
+
+  if (errorText) {
+    return {
+      answer: `[[STREAM_ERROR]] ${errorText}`,
+      finishReason,
+      blocked: false,
+    }
+  }
+
+  return { answer: null, finishReason, blocked: false }
 }
 
 export default class ChatApiProvider {
@@ -145,11 +168,11 @@ export default class ChatApiProvider {
       return { output: `[[HTTP_ERROR]] ${response.status} ${detail}` }
     }
 
-    const { answer, finishReason } = parseStream(body)
+    const { answer, finishReason, blocked } = parseStream(body)
     if (answer === null) {
       return { output: `[[EMPTY]] ${body.slice(0, 300)}` }
     }
 
-    return { output: answer, metadata: { finishReason } }
+    return { output: answer, metadata: { finishReason, blocked } }
   }
 }
