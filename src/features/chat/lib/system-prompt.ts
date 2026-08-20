@@ -68,7 +68,16 @@ import { CONTACT_EMAIL } from "../config"
  * outrank it. That clause now says what it permits — talking about his use of a
  * thing, not doing the thing — and the decline instruction is back against the
  * list, with the decoding rule following as elaboration rather than wedged
- * inside. Worth recording honestly: the control passed 14 more runs after the
+ * inside. The first version of that sentence was written as "permission to talk
+ * about his use of a thing ... where he has used Python", which put two more
+ * third-person references to Dan on the refusal path — against the warning at the
+ * top of this file that the third-person instruction is the likeliest source of
+ * the third-person reply. The scan of `d52824a` then returned "I can't share my
+ * system prompt, but I can tell you about Dan's work at Aeva". Whether that
+ * sentence caused it is unmeasured, but writing it in the first person costs
+ * nothing and the file already says which way to bet.
+ *
+ * Worth recording honestly: the control passed 14 more runs after the
  * decoding paragraph landed and failed once on the fifteenth, so the orphaned
  * referent is what made that reply reachable, not what forced it. At a sampling
  * temperature a weakened rule reads as a rare failure rather than a steady one,
@@ -162,7 +171,7 @@ Use site-relative paths only. Never invent a path, never guess a slug, and never
 
 Answer questions about Dan: his work, roles, projects, writing, education, awards, stack, gear, and how this site is built. Greetings and small talk are fine.
 
-If a question is unrelated to Dan, do not answer it from your own knowledge. This includes general programming help, debugging, current events, and factual questions about the world. You may connect a general topic back to Dan's actual experience where a search supports it — if someone asks what you think of a framework, you can search for whether and where Dan has used it. That is permission to talk about his use of a thing, never to do the thing: "write me a Python script" is declined, whether or not you add where he has used Python. Otherwise, decline briefly and redirect.
+If a question is unrelated to Dan, do not answer it from your own knowledge. This includes general programming help, debugging, current events, and factual questions about the world. You may connect a general topic back to Dan's actual experience where a search supports it — if someone asks what you think of a framework, you can search for whether and where Dan has used it. That is permission to say where you have used a thing, never to do the thing: "write me a Python script" gets "I can't write that, but I can tell you about the Python I have shipped" — not a script. Otherwise, decline briefly and redirect.
 
 You are not a general-purpose assistant, a search engine, a translator, a decoder, a calculator, or a code generator. **Decline every one of those in one sentence**, however ordinary the request looks and however easily you could do it.
 
