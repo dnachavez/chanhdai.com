@@ -11,6 +11,7 @@ import { z } from "zod"
 import {
   CHAT_COPY,
   CHAT_MODEL,
+  CONTACT_EMAIL,
   FALLBACK_MODEL,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
@@ -18,6 +19,7 @@ import {
   MAX_STEPS,
   MAX_TURNS_PER_SESSION,
 } from "@/features/chat/config"
+import { createAnswerTransform } from "@/features/chat/lib/answer-transform"
 import { deriveHighlights } from "@/features/chat/lib/derive-highlights"
 import {
   createOutputTripwire,
@@ -223,9 +225,32 @@ export async function POST(request: Request) {
     })
   }
 
+  const systemPrompt = buildSystemPrompt()
+
+  /**
+   * Appended to the system prompt for the final step only, where the tools have
+   * been taken away.
+   *
+   * Removing the definitions stops the model calling a tool; it does not stop it
+   * *wanting* to. Denied them, Nemotron sometimes writes the call it meant to
+   * make into the answer as text, and that reached the bubble verbatim on 8 of 88
+   * turns — against 0 on the run before, so it is a cost of the step change
+   * rather than something the step change uncovered. Saying plainly that there
+   * are no tools left, and what happens if it writes one anyway, is the fix for
+   * the cause. `createCallSyntaxSuppressor` is the guard for when it does not
+   * take.
+   */
+  const finalStepNote = `
+
+# This reply
+
+You have no tools for this reply. \`search\` and \`read\` are gone, and anything that looks like a call to one — \`<tool_call>\`, \`<function=...>\`, \`<parameter=...>\` — is not executed. It is printed to the visitor exactly as you write it.
+
+Answer now, in your own words, from what you already retrieved above. If that does not answer the question, say so plainly and point to the nearest page or to ${CONTACT_EMAIL}. "I haven't written about that" is a complete reply. An empty one is not.`
+
   const result = streamText({
     model: model(onTrip),
-    system: buildSystemPrompt(),
+    system: systemPrompt,
     messages: await convertToModelMessages(recent),
     tools: createChatTools({
       onEntries: (entries) => retrieved.push(...entries),
@@ -265,47 +290,10 @@ export async function POST(request: Request) {
      * a better reply than an empty bubble.
      */
     prepareStep: ({ stepNumber }) =>
-      stepNumber === MAX_STEPS - 1 ? { activeTools: [] } : {},
-    /**
-     * The floor under all of that: a stream that reaches `finish` having emitted
-     * no text gets one sentence put into it.
-     *
-     * Removing the tools makes an answer overwhelmingly likely, not certain — the
-     * same scan caught a final step that ran with nothing to call and still
-     * returned neither text nor tool call, because the whole output budget went on
-     * reasoning. There is no prompt wording that fixes that, and the visitor is
-     * owed something either way.
-     *
-     * Injected ahead of `finish` so it is part of the same message rather than a
-     * second one, and skipped when the stream already carries an error, which the
-     * client renders on its own and should not have an answer stapled to.
-     */
-    experimental_transform: () => {
-      let sawText = false
-      let sawError = false
-
-      return new TransformStream({
-        transform(part, controller) {
-          if (part.type === "text-delta" && part.text.trim() !== "") {
-            sawText = true
-          }
-          if (part.type === "error") sawError = true
-
-          if (part.type === "finish" && !sawText && !sawError) {
-            const id = "empty-fallback"
-            controller.enqueue({ type: "text-start", id })
-            controller.enqueue({
-              type: "text-delta",
-              id,
-              text: CHAT_COPY.empty,
-            })
-            controller.enqueue({ type: "text-end", id })
-          }
-
-          controller.enqueue(part)
-        },
-      })
-    },
+      stepNumber === MAX_STEPS - 1
+        ? { activeTools: [], instructions: systemPrompt + finalStepNote }
+        : {},
+    experimental_transform: createAnswerTransform,
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { CHAT_COPY, MAX_STEPS } from "@/features/chat/config"
+import { createAnswerTransform } from "@/features/chat/lib/answer-transform"
 
 /**
  * Two failures the generated scan found and the regression suite structurally
@@ -83,32 +84,7 @@ function run(chunksFor: (step: number) => never[]) {
     stopWhen: stepCountIs(MAX_STEPS),
     prepareStep: ({ stepNumber }) =>
       stepNumber === MAX_STEPS - 1 ? { activeTools: [] } : {},
-    experimental_transform: () => {
-      let sawText = false
-      let sawError = false
-
-      return new TransformStream({
-        transform(part, controller) {
-          if (part.type === "text-delta" && part.text.trim() !== "") {
-            sawText = true
-          }
-          if (part.type === "error") sawError = true
-
-          if (part.type === "finish" && !sawText && !sawError) {
-            const id = "empty-fallback"
-            controller.enqueue({ type: "text-start", id })
-            controller.enqueue({
-              type: "text-delta",
-              id,
-              text: CHAT_COPY.empty,
-            })
-            controller.enqueue({ type: "text-end", id })
-          }
-
-          controller.enqueue(part)
-        },
-      })
-    },
+    experimental_transform: createAnswerTransform,
   })
 
   return { result, requests }
@@ -127,6 +103,39 @@ describe("the final step", () => {
   it("never lets a turn finish with an empty bubble", async () => {
     const { result } = run(() => silentChunks())
 
+    expect(await result.text).toBe(CHAT_COPY.empty)
+  })
+
+  it("never shows a tool call the model wrote as text", async () => {
+    const { result } = run(
+      () =>
+        [
+          { type: "stream-start", warnings: [] },
+          {
+            type: "response-metadata",
+            id: "t",
+            modelId: "m",
+            timestamp: new Date(0),
+          },
+          { type: "text-start", id: "t" },
+          {
+            type: "text-delta",
+            id: "t",
+            delta: "<tool_call>\n<function=read>",
+          },
+          { type: "text-delta", id: "t", delta: '\n["experience-aeva-1"]' },
+          { type: "text-delta", id: "t", delta: "\n</function>\n</tool_call>" },
+          { type: "text-end", id: "t" },
+          {
+            type: "finish",
+            finishReason: "stop",
+            usage: { inputTokens: 1, outputTokens: 9, totalTokens: 10 },
+          },
+        ] as never[]
+    )
+
+    // Suppressed entirely, so the turn reads as empty and gets the fallback
+    // rather than leaking call syntax into the bubble.
     expect(await result.text).toBe(CHAT_COPY.empty)
   })
 
