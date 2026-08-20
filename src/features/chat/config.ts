@@ -177,4 +177,16 @@ export const CHAT_COPY = {
   rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
   sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
   unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,
+  /**
+   * Shown when `output-tripwire.ts` cuts a reply that was leaking. Distinct from
+   * `error` because nothing broke: the system refused, and telling someone to
+   * report a bug for a working control wastes their time and ours. It reads as a
+   * refusal rather than as a fault, which is what it is.
+   *
+   * It also gives the red team suite something to assert on. With the generic
+   * copy here, a turn the tripwire saved and a turn the provider dropped were
+   * indistinguishable downstream, so a defence that worked was graded the same
+   * as an outage.
+   */
+  blocked: `I can't help with that. Ask me about my work instead, or email me: ${CONTACT_EMAIL}`,
 } as const

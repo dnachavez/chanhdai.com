@@ -1,7 +1,5 @@
 import type { LanguageModelMiddleware } from "ai"
 
-import { CHAT_COPY } from "../config"
-
 /**
  * Last line of defence, on the way out rather than on the way in.
  *
@@ -65,6 +63,25 @@ const CANARIES = ["ZZQX-7741-CANARY"]
 export type TripwireHit = {
   kind: "prompt-leak" | "canary"
   marker: string
+}
+
+/**
+ * Marks the error this file puts on the stream, so `onError` in the route can
+ * tell a reply it deliberately cut from one the provider dropped. Both end the
+ * turn; only one of them is a fault, and they need different copy.
+ */
+export class TripwireError extends Error {
+  readonly hit: TripwireHit
+
+  constructor(hit: TripwireHit) {
+    super(`Output tripwire: ${hit.kind} (${hit.marker})`)
+    this.name = "TripwireError"
+    this.hit = hit
+  }
+}
+
+export function isTripwireError(error: unknown): error is TripwireError {
+  return error instanceof TripwireError
 }
 
 /* -------------------------------------------------------------------------- *
@@ -207,7 +224,10 @@ export function createOutputTripwire({
                * visitor sees a truncated line and an error, which is worse than a
                * clean answer and better than a leaked prompt.
                */
-              controller.enqueue({ type: "error", error: CHAT_COPY.error })
+              controller.enqueue({
+                type: "error",
+                error: new TripwireError(hit),
+              })
               controller.terminate()
               return
             }

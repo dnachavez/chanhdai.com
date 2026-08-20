@@ -21,6 +21,7 @@ import {
 import { deriveHighlights } from "@/features/chat/lib/derive-highlights"
 import {
   createOutputTripwire,
+  isTripwireError,
   type TripwireHit,
 } from "@/features/chat/lib/output-tripwire"
 import { checkRateLimit, getClientIp } from "@/features/chat/lib/rate-limit"
@@ -286,6 +287,12 @@ export async function POST(request: Request) {
      * having a bad afternoon.
      */
     onError: (error) => {
+      /**
+       * Checked first: this one is ours, and it is not a fault. The reply was
+       * cut on purpose, so it gets refusal copy rather than an apology.
+       */
+      if (isTripwireError(error)) return CHAT_COPY.blocked
+
       if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted
       if (isUpstreamRateLimit(error)) return CHAT_COPY.busy
       if (isUpstreamUnavailable(error)) return CHAT_COPY.upstream
