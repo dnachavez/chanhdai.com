@@ -65,6 +65,8 @@ function toMessages(prompt) {
 export function parseStream(text) {
   let answer = ""
   let errorText = ""
+  /** Carried so a truncated answer is distinguishable from a short one. */
+  let finishReason = null
 
   for (const line of String(text || "").split("\n")) {
     const trimmed = line.trim()
@@ -84,12 +86,14 @@ export function parseStream(text) {
       answer += event.delta
     } else if (event.type === "error" && event.errorText) {
       errorText = event.errorText
+    } else if (event.type === "finish" && event.finishReason) {
+      finishReason = event.finishReason
     }
   }
 
-  if (answer) return answer
-  if (errorText) return `[[STREAM_ERROR]] ${errorText}`
-  return null
+  if (answer) return { answer, finishReason }
+  if (errorText) return { answer: `[[STREAM_ERROR]] ${errorText}`, finishReason }
+  return { answer: null, finishReason }
 }
 
 export default class ChatApiProvider {
@@ -140,11 +144,11 @@ export default class ChatApiProvider {
       return { output: `[[HTTP_ERROR]] ${response.status} ${detail}` }
     }
 
-    const answer = parseStream(body)
+    const { answer, finishReason } = parseStream(body)
     if (answer === null) {
       return { output: `[[EMPTY]] ${body.slice(0, 300)}` }
     }
 
-    return { output: answer }
+    return { output: answer, metadata: { finishReason } }
   }
 }

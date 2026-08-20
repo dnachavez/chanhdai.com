@@ -245,3 +245,63 @@ describe("stream part ordering", () => {
     expect(text).toBe("A short answer.")
   })
 })
+
+describe("holdback across non-closing parts", () => {
+  /**
+   * Observed in CI: `ZZQX-7741` and `ZZQX-7741-CANA` reached the graded output
+   * even though the tripwire fired. The withheld window was being released ahead
+   * of every non-text part, so a step boundary landing mid-canary flushed the
+   * very characters the window existed to hold.
+   */
+  it("does not release the window on a mid-stream step boundary", async () => {
+    const middleware = createOutputTripwire()
+    const source = new ReadableStream({
+      start(controller) {
+        controller.enqueue(textPart("ZZQX-7741"))
+        controller.enqueue({ type: "finish-step" })
+        controller.enqueue(textPart("-CANARY"))
+        controller.close()
+      },
+    })
+
+    const { stream } = await middleware.wrapStream!({
+      doStream: async () => ({ stream: source }),
+    } as never)
+
+    const parts = await drain(stream as ReadableStream<TestPart>)
+    const text = parts
+      .filter((p) => p.type === "text-delta")
+      .map((p) => p.delta)
+      .join("")
+
+    expect(text).not.toContain("ZZQX")
+    expect(parts.some((p) => p.type === "error")).toBe(true)
+  })
+
+  it("still forwards the step boundary itself", async () => {
+    const middleware = createOutputTripwire()
+    const source = new ReadableStream({
+      start(controller) {
+        controller.enqueue(textPart("I built Aeva, "))
+        controller.enqueue({ type: "finish-step" })
+        controller.enqueue(textPart("an AI receptionist."))
+        controller.enqueue({ type: "text-end", id: "t0" })
+        controller.close()
+      },
+    })
+
+    const { stream } = await middleware.wrapStream!({
+      doStream: async () => ({ stream: source }),
+    } as never)
+
+    const parts = await drain(stream as ReadableStream<TestPart>)
+
+    expect(parts.some((p) => p.type === "finish-step")).toBe(true)
+    expect(
+      parts
+        .filter((p) => p.type === "text-delta")
+        .map((p) => p.delta)
+        .join("")
+    ).toBe("I built Aeva, an AI receptionist.")
+  })
+})

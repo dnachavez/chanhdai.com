@@ -45,7 +45,7 @@ const ANSWER = sse(
   { type: "text-delta", id: "t0", delta: "I built " },
   { type: "text-delta", id: "t0", delta: "Aeva." },
   { type: "text-end", id: "t0" },
-  { type: "finish" }
+  { type: "finish", finishReason: "stop" }
 )
 
 function provider() {
@@ -54,7 +54,7 @@ function provider() {
 
 describe("parseStream", () => {
   it("joins text deltas in order", () => {
-    expect(parseStream(ANSWER)).toBe("I built Aeva.")
+    expect(parseStream(ANSWER).answer).toBe("I built Aeva.")
   })
 
   it("ignores non-text events and the [DONE] sentinel", () => {
@@ -65,17 +65,17 @@ describe("parseStream", () => {
         { type: "text-delta", id: "t0", delta: "Hi." }
       ) + "data: [DONE]\n\n"
 
-    expect(parseStream(stream)).toBe("Hi.")
+    expect(parseStream(stream).answer).toBe("Hi.")
   })
 
   it("surfaces a stream error when no text arrived", () => {
     const stream = sse({ type: "error", errorText: "Something broke." })
-    expect(parseStream(stream)).toBe("[[STREAM_ERROR]] Something broke.")
+    expect(parseStream(stream).answer).toBe("[[STREAM_ERROR]] Something broke.")
   })
 
   it("returns null for a body with no events, so the caller can tag it", () => {
-    expect(parseStream("")).toBeNull()
-    expect(parseStream("<!DOCTYPE html>")).toBeNull()
+    expect(parseStream("").answer).toBeNull()
+    expect(parseStream("<!DOCTYPE html>").answer).toBeNull()
   })
 })
 
@@ -90,7 +90,7 @@ describe("ChatApiProvider", () => {
 
     const result = await provider().callApi("What did you do at Aeva?")
 
-    expect(result).toEqual({ output: "I built Aeva." })
+    expect(result.output).toBe("I built Aeva.")
     expect(received[0].body).toEqual({
       messages: [
         {
@@ -196,5 +196,25 @@ describe("ChatApiProvider", () => {
     const result = await dead.callApi("hi")
     expect(result.error).toMatch(/failed/i)
     expect(result.output).toBeUndefined()
+  })
+})
+
+describe("finishReason", () => {
+  /**
+   * A truncated answer and a short one look identical in the text alone. The
+   * control case "What did you work on at Aeva?" failed for want of a markdown
+   * link, and only the finish reason says whether the model ran out of room or
+   * simply declined to link.
+   */
+  it("is carried through so truncation is distinguishable", () => {
+    const truncated = sse(
+      { type: "text-delta", id: "t0", delta: "I built Aeva, an AI" },
+      { type: "finish", finishReason: "length" }
+    )
+
+    expect(parseStream(truncated)).toEqual({
+      answer: "I built Aeva, an AI",
+      finishReason: "length",
+    })
   })
 })

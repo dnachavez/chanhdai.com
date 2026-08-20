@@ -132,6 +132,14 @@ const HOLDBACK = Math.max(
   ...CANARIES.map((canary) => canary.length * 2)
 )
 
+/**
+ * Parts after which no further text can arrive for the current block, and so the
+ * only ones it is safe to release the withheld window ahead of. Everything else
+ * — step boundaries, tool traffic, reasoning, metadata — can be followed by more
+ * text, and flushing on those reopens the gap the window exists to close.
+ */
+const CLOSING_PARTS = new Set(["text-end", "finish", "error"])
+
 export function createOutputTripwire({
   onTrip,
 }: {
@@ -155,21 +163,30 @@ export function createOutputTripwire({
             if (tripped) return
 
             /**
-             * The withheld tail is released before any non-text part, not in
-             * `flush`. A `text-end` closing the block the tail belongs to is
-             * forwarded the moment it arrives, so emitting the remainder
-             * afterwards addresses a part the SDK has already closed — which it
-             * rejects with "text part <id> not found", failing the whole turn.
-             * That was firing on ordinary answers, not just attacks.
+             * The withheld tail is released just before the parts that close the
+             * text block or the response, and only those.
+             *
+             * It cannot wait for `flush`: a `text-end` forwarded first would
+             * close the block, and the remainder would then address a part the
+             * SDK has already closed, which it rejects with "text part <id> not
+             * found" and fails the whole turn.
+             *
+             * It equally cannot happen on every non-text part. A model that emits
+             * a step boundary mid-answer would flush the window early, and the
+             * window is the only thing stopping a canary split across that
+             * boundary from rendering — `ZZQX-7741` and `ZZQX-7741-CANA` both
+             * reached output that way before this was narrowed.
              */
             if (part.type !== "text-delta") {
-              if (released < seen.length && lastId !== undefined) {
-                controller.enqueue({
-                  type: "text-delta",
-                  id: lastId,
-                  delta: seen.slice(released),
-                })
-                released = seen.length
+              if (CLOSING_PARTS.has(part.type)) {
+                if (released < seen.length && lastId !== undefined) {
+                  controller.enqueue({
+                    type: "text-delta",
+                    id: lastId,
+                    delta: seen.slice(released),
+                  })
+                  released = seen.length
+                }
               }
 
               controller.enqueue(part)
