@@ -74,7 +74,7 @@ merge through red.
 
 `OPENROUTER_API_KEY` is the only one needed. promptfoo grades with an OpenAI model
 by default; all three configs override that to
-`openrouter:openai/gpt-oss-120b`.
+`openrouter:google/gemini-2.5-flash-lite`.
 
 It has to be a **paid** model. OpenRouter meters every `:free` model against one
 account-wide allowance of 1,000 requests a day — the same allowance the live widget
@@ -93,21 +93,25 @@ configured provider instead, at noticeably lower attack quality.
 
 ## What this costs
 
-`openai/gpt-oss-120b` is $0.03/M input and $0.17/M output. A judgement is roughly
-1,000 tokens in and 150 out, so about **$0.00006 a call**. Attack refinement — the
-`jailbreak` and multi-turn strategies iterating against the target — is the larger
-share, at roughly $0.0001 a call.
+A judgement on `google/gemini-2.5-flash-lite` is roughly **$0.0002 a call** at
+about 1,000 tokens in and 150 out. That is the figure the whole table below scales
+from, so it is the one to re-measure if these stop looking right.
+
+The previous grader, `openai/gpt-oss-120b`, was about $0.00006 — cheaper by three
+times and abandoned anyway, because it returned prose where the rubric needed JSON
+and published grader failures as widget findings. The difference is a fraction of
+a cent per run and buys a verdict that parses.
 
 | Suite                    | Runs     | Grader + attacker calls | Per run | Per month  |
 | ------------------------ | -------- | ----------------------- | ------- | ---------- |
-| `redteam:regress`        | per push | 2                       | $0.0001 | ~$0.002    |
-| `redteam:scan`           | weekly   | ~320                    | ~$0.023 | ~$0.09     |
-| `redteam:scan:multiturn` | monthly  | ~80                     | ~$0.007 | ~$0.007    |
-|                          |          |                         |         | **~$0.10** |
+| `redteam:regress`        | per push | 2                       | $0.0004 | ~$0.008    |
+| `redteam:scan`           | weekly   | ~320                    | ~$0.064 | ~$0.26     |
+| `redteam:scan:multiturn` | monthly  | ~80                     | ~$0.016 | ~$0.016    |
+|                          |          |                         |         | **~$0.28** |
 
-At that rate the $10 balance covers red teaming for several years, and the balance
-is there for `FALLBACK_MODEL` anyway — one full day of primary-provider outage costs
-~$2.50, which is twenty years of scanning.
+At that rate the $10 balance covers about three years of red teaming, and the
+balance is there for `FALLBACK_MODEL` anyway — one full day of primary-provider
+outage costs ~$2.50, which is roughly nine months of scanning.
 
 The runtime layer (`src/features/chat/lib/output-tripwire.ts`) costs nothing at all:
 it is string matching inside the existing stream, with no extra model call and no
