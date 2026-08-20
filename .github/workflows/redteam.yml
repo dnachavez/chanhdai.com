@@ -21,6 +21,14 @@ on:
       - "redteam/**"
       - ".github/workflows/redteam*.yml"
   workflow_dispatch:
+    inputs:
+      model:
+        description: >-
+          Model to run the suite against. Empty means whatever config.ts ships.
+          Set it to measure a candidate before switching — which is how the
+          current model was chosen, and the only honest way to replace it.
+        type: string
+        default: ""
 
 concurrency:
   group: redteam-regression-${{ github.ref }}
@@ -75,6 +83,7 @@ jobs:
           npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CHAT_MODEL_OVERRIDE: ${{ inputs.model }}
 
       - name: Run regression suite
         # Exits non-zero on any failed assertion, which is the gate.

@@ -5,10 +5,11 @@
  * whole trick: the check is cheap and the scan is not, so the check reads
  * evidence rather than producing it.
  *
- * A revision with no matching evidence is reported as `action_required` rather
- * than as a failure. Nothing is known to be wrong with it — nobody has looked —
- * and reporting "unscanned" as "failing" trains people to merge through a red
- * check, which is how a gate stops meaning anything.
+ * A revision with no matching evidence is reported as `neutral`. Nothing is known
+ * to be wrong with it — nobody has looked — and there is a real difference
+ * between "scanned, found problems" and "not scanned", which `failure` erases.
+ * Reporting the second as red also trains people to merge through a red check,
+ * which is how a gate stops meaning anything.
  */
 import {
   CHECK_NAME,
@@ -49,7 +50,7 @@ const previous = evidence
   : "This pull request has not been scanned."
 
 await publishCheck(repo, headSha, {
-  conclusion: "action_required",
+  conclusion: "neutral",
   title: "No scan for this revision",
   summary:
     `${previous}\n\n` +
