@@ -243,14 +243,21 @@ export async function POST(request: Request) {
      * and the model does not know the budget it is working against. Given three
      * steps it will sometimes use all three on `search` and `read` — the stream
      * then carries three complete tool steps and finishes with no text part at
-     * all, and the visitor is shown nothing. The first generated scan against the
-     * shipped model hit this on 5 of 87 turns, and the regression suite could not
-     * see it because its `[[EMPTY]]` assertions only cover eleven fixed payloads.
+     * all, and the visitor is shown nothing. A generated scan against the shipped
+     * model hit this on 5 of 87 turns, and the regression suite could not see it
+     * because its `[[EMPTY]]` assertions only cover eleven fixed payloads.
      *
-     * `toolChoice: "none"` on the final step makes that step an answer by
-     * construction. It costs nothing: the budget is unchanged at three, and this
-     * only decides how the third is spent. A turn that had already answered by
-     * then never reaches here.
+     * `activeTools: []` rather than `toolChoice: "none"`, which was tried first
+     * and does not work here. The SDK sends the directive correctly — a mock
+     * provider confirms `tool_choice: "none"` on the third call — but it still
+     * sends the tool definitions alongside it, and Nemotron calls them anyway. The
+     * next scan came back with the third step making two tool calls under a
+     * `none` it had been given and ignored, and empty replies up from 5 to 9.
+     * Emptying `activeTools` removes the definitions from the request instead, so
+     * there is nothing left to call. It is not a request the provider can decline.
+     *
+     * Costs nothing: the budget is unchanged at three, and this only decides how
+     * the third is spent. A turn that had already answered never reaches here.
      *
      * The model answers from whatever it retrieved in the first two steps, which
      * is the same material it would have had anyway — the grounding rules already
@@ -258,7 +265,47 @@ export async function POST(request: Request) {
      * a better reply than an empty bubble.
      */
     prepareStep: ({ stepNumber }) =>
-      stepNumber === MAX_STEPS - 1 ? { toolChoice: "none" } : {},
+      stepNumber === MAX_STEPS - 1 ? { activeTools: [] } : {},
+    /**
+     * The floor under all of that: a stream that reaches `finish` having emitted
+     * no text gets one sentence put into it.
+     *
+     * Removing the tools makes an answer overwhelmingly likely, not certain — the
+     * same scan caught a final step that ran with nothing to call and still
+     * returned neither text nor tool call, because the whole output budget went on
+     * reasoning. There is no prompt wording that fixes that, and the visitor is
+     * owed something either way.
+     *
+     * Injected ahead of `finish` so it is part of the same message rather than a
+     * second one, and skipped when the stream already carries an error, which the
+     * client renders on its own and should not have an answer stapled to.
+     */
+    experimental_transform: () => {
+      let sawText = false
+      let sawError = false
+
+      return new TransformStream({
+        transform(part, controller) {
+          if (part.type === "text-delta" && part.text.trim() !== "") {
+            sawText = true
+          }
+          if (part.type === "error") sawError = true
+
+          if (part.type === "finish" && !sawText && !sawError) {
+            const id = "empty-fallback"
+            controller.enqueue({ type: "text-start", id })
+            controller.enqueue({
+              type: "text-delta",
+              id,
+              text: CHAT_COPY.empty,
+            })
+            controller.enqueue({ type: "text-end", id })
+          }
+
+          controller.enqueue(part)
+        },
+      })
+    },
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,

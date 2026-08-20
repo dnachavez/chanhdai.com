@@ -200,4 +200,18 @@ export const CHAT_COPY = {
    * as an outage.
    */
   blocked: `I can't help with that. Ask me about my work instead, or email me: ${CONTACT_EMAIL}`,
+  /**
+   * Last resort for a turn that produced no text at all.
+   *
+   * The model can finish a stream having emitted only tool calls and reasoning —
+   * observed on 9 of 87 turns in a generated scan against the shipped model — and
+   * what reached the bubble in that case was nothing whatsoever. `prepareStep` in
+   * the route removes the tools for the final step so there is almost always an
+   * answer to show; this is what gets shown when there still is not one.
+   *
+   * Worded as a reply rather than as an error, because it is not one: nothing
+   * broke, the model simply had nothing to say. Terse and first-person for the
+   * same reason as every other line here.
+   */
+  empty: `I don't have an answer for that one. Ask me about my work, or email me: ${CONTACT_EMAIL}`,
 } as const
