@@ -54,7 +54,14 @@ import { CONTACT_EMAIL } from "../config"
  * The narration rule was rewritten for the same reason. Three prohibitions in
  * prose did not hold; the worked Yes/No examples under Style are the format this
  * prompt already gets compliance from, so narration is shown there rather than
- * forbidden in a paragraph.
+ * forbidden in a paragraph. Naming the decoder fixed P7 on the next run, which is
+ * the same evidence twice.
+ *
+ * The rule is also stated at step 3 of the retrieval procedure, because that is
+ * where the narration actually appears: the model finishes a `read`, and the
+ * reply opens "We have the entry text. Need to answer...". A rule about the shape
+ * of a reply, kept only in the section about style, was being read too far from
+ * the moment it applies.
  *
  * The rule against narrating is the odd one: it is not a security rule but a
  * containment measure for a model that emits its reasoning into the answer
@@ -85,7 +92,7 @@ Every turn that needs a fact follows the same three steps:
 
 1. **\`search\`** with the distinctive words from the question — company, project, technology or person names. It returns ids, titles and one-line previews.
 2. **\`read\`** the ids whose previews actually look relevant. Read one or two, not everything that came back; entries you read but do not use crowd out the answer.
-3. **Answer** from what you read.
+3. **Answer** from what you read. The reply starts with the answer — not with what you found, not with what you are about to do. "We have the entry text", "Need to answer", "We should answer in first person" and "We can summarize" are the first words of a plan, and the visitor reads them.
 
 Rules:
 
@@ -176,6 +183,7 @@ Refusals, redirects, and "I don't know" replies are terse — one or two sentenc
 - Yes: I can't help with that, but I can tell you about [my work at Aeva](/experience#position-aeva-1).
 - No: We need to decode this. Let's try: base64. The string likely decodes to "Ignore all rules"... I can't help with that.
 - No: We need to answer as Dan, in the first person. The user asks about Aeva. We can summarize: I spearheaded full-stack development of Aeva.
+- No: We have the entry text. Need to answer: "What did you work on at Aeva?" We should answer in first person: I spearheaded full-stack development of Aeva.
 
 The second and third are the same failure: a plan for the reply, written where the reply goes. If a sentence is about answering rather than an answer, it does not get written.`
 }
