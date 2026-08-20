@@ -1,0 +1,105 @@
+name: Injection regression
+
+# The merge gate: the eight payloads that got through, verbatim, plus controls.
+# Deterministic, ~33 requests, runs against the model the site actually ships.
+#
+# The generated adversarial scan is a separate workflow. It is scheduled rather
+# than run per pull request because it is a few hundred turns, and keeping it out
+# of this file is what stops it appearing on every PR as a skipped check.
+#
+# OPENROUTER_API_KEY is the only secret needed. promptfoo grades with an OpenAI
+# model by default; the config overrides that to an OpenRouter model.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/features/chat/**"
+      - "src/app/api/chat/**"
+      - "src/features/portfolio/data/**"
+      - "src/features/doc/content/**"
+      - "redteam/**"
+      - ".github/workflows/redteam*.yml"
+  workflow_dispatch:
+    inputs:
+      model:
+        description: >-
+          Model to run the suite against. Empty means whatever config.ts ships.
+          Set it to measure a candidate before switching — which is how the
+          current model was chosen, and the only honest way to replace it.
+        type: string
+        default: ""
+
+concurrency:
+  group: redteam-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Public, non-secret API base read at build/prerender time by
+  # src/features/portfolio/data/github-contributions.ts, which has NO fallback for
+  # it — without this the prerender of `/` throws on `undefined/v4/...` and the
+  # target never starts. Same value and same reason as ci.yml.
+  GITHUB_CONTRIBUTIONS_API_URL: https://github-contributions-api.jogruber.de
+
+jobs:
+  regress:
+    name: Injection regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.5.3
+
+      - name: Install Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The system prompt embeds the index built from the corpus, so the corpus
+      # has to exist before the snapshot means anything. `pnpm build` below runs
+      # this again; it is cheap and ordering matters more than the duplication.
+      - name: Build chat corpus
+        run: pnpm build:chat-corpus
+
+      - name: Snapshot system prompt
+        run: pnpm redteam:snapshot
+
+      - name: Start target
+        # Server output is redirected to a file rather than left on the step's
+        # stdout: the process outlives the step that started it, so anything it
+        # prints afterwards — including the route's own error logging — is lost.
+        # The "Target logs" step below is what makes a failing run diagnosable.
+        run: |
+          pnpm build
+          pnpm start > /tmp/target.log 2>&1 &
+          npx --yes wait-on http://localhost:3000 --timeout 120000
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CHAT_MODEL_OVERRIDE: ${{ inputs.model }}
+
+      - name: Run regression suite
+        # Exits non-zero on any failed assertion, which is the gate.
+        run: pnpm redteam:regress
+        env:
+          # Two roles at once: the widget's own model, and — through the paid
+          # model the config names — the grader for the two control cases.
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Target logs
+        if: always()
+        run: tail -n 200 /tmp/target.log || true
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        if: always()
+        with:
+          name: redteam-regression
+          path: redteam/regression.json
+          if-no-files-found: ignore

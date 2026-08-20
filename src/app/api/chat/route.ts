@@ -3,6 +3,7 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
+  wrapLanguageModel,
   type UIMessage,
 } from "ai"
 import { z } from "zod"
@@ -10,6 +11,7 @@ import { z } from "zod"
 import {
   CHAT_COPY,
   CHAT_MODEL,
+  CONTACT_EMAIL,
   FALLBACK_MODEL,
   MAX_HISTORY_MESSAGES,
   MAX_MESSAGE_LENGTH,
@@ -17,7 +19,13 @@ import {
   MAX_STEPS,
   MAX_TURNS_PER_SESSION,
 } from "@/features/chat/config"
+import { createAnswerTransform } from "@/features/chat/lib/answer-transform"
 import { deriveHighlights } from "@/features/chat/lib/derive-highlights"
+import {
+  createOutputTripwire,
+  isTripwireError,
+  type TripwireHit,
+} from "@/features/chat/lib/output-tripwire"
 import { checkRateLimit, getClientIp } from "@/features/chat/lib/rate-limit"
 import { suggestionsFrom } from "@/features/chat/lib/suggest-follow-ups"
 import { buildSystemPrompt } from "@/features/chat/lib/system-prompt"
@@ -44,14 +52,40 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 /**
+ * Overridable so a red team run does not have to compete with the live site for
+ * the same scarce resource.
+ *
+ * `CHAT_MODEL` is `:free`, and OpenRouter meters every free model against one
+ * account-wide allowance of 1,000 requests a day. A generated scan is a few
+ * hundred turns, so running one spends most of a day's visitor capacity to test
+ * capacity — and the first attempt did exactly that, leaving ~200 requests for
+ * everyone else. Pointing a scan at a paid model costs cents and draws on the
+ * balance instead.
+ *
+ * Read here rather than in `config.ts` because that module is imported by client
+ * components for its copy, and a server-only variable has no business in the
+ * browser bundle. Unset in every normal deployment, including production.
+ */
+const targetModel = () => process.env.CHAT_MODEL_OVERRIDE || CHAT_MODEL
+
+/**
  * Instantiated per request rather than at module scope so the key is read when
  * it is used, matching the guard below — a module-level client would capture an
  * undefined key at import time and fail later with something less legible.
  */
-function model() {
-  return createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
-    CHAT_MODEL
-  )
+function model(onTrip: (hit: TripwireHit) => void) {
+  return wrapLanguageModel({
+    model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
+      targetModel()
+    ),
+    /**
+     * Wraps the model rather than post-processing the stream in this file, so it
+     * also covers the fallback model — `providerOptions.openrouter.models` routes
+     * onward inside the same request, and a check written against the response
+     * here would never know which of the two answered.
+     */
+    middleware: createOutputTripwire({ onTrip }),
+  })
 }
 
 /**
@@ -176,9 +210,47 @@ export async function POST(request: Request) {
 
   const recent = pruneHistory(messages) as unknown as UIMessage[]
 
+  /**
+   * A trip is a successful injection reaching production, which is the one event
+   * here worth waking up for — it means both the system prompt and whatever the
+   * regression suite last asserted were insufficient against a live payload. The
+   * question that caused it is logged with it, because the payload is the finding;
+   * it goes straight into `redteam/promptfooconfig.yaml` as a new case.
+   */
+  const onTrip = (hit: TripwireHit) => {
+    console.error("[chat] output tripwire", {
+      kind: hit.kind,
+      marker: hit.marker,
+      question: asked.at(-1)?.slice(0, MAX_MESSAGE_LENGTH),
+    })
+  }
+
+  const systemPrompt = buildSystemPrompt()
+
+  /**
+   * Appended to the system prompt for the final step only, where the tools have
+   * been taken away.
+   *
+   * Removing the definitions stops the model calling a tool; it does not stop it
+   * *wanting* to. Denied them, Nemotron sometimes writes the call it meant to
+   * make into the answer as text, and that reached the bubble verbatim on 8 of 88
+   * turns — against 0 on the run before, so it is a cost of the step change
+   * rather than something the step change uncovered. Saying plainly that there
+   * are no tools left, and what happens if it writes one anyway, is the fix for
+   * the cause. `createCallSyntaxSuppressor` is the guard for when it does not
+   * take.
+   */
+  const finalStepNote = `
+
+# This reply
+
+You have no tools for this reply. \`search\` and \`read\` are gone, and anything that looks like a call to one — \`<tool_call>\`, \`<function=...>\`, \`<parameter=...>\` — is not executed. It is printed to the visitor exactly as you write it.
+
+Answer now, in your own words, from what you already retrieved above. If that does not answer the question, say so plainly and point to the nearest page or to ${CONTACT_EMAIL}. "I haven't written about that" is a complete reply. An empty one is not.`
+
   const result = streamText({
-    model: model(),
-    system: buildSystemPrompt(),
+    model: model(onTrip),
+    system: systemPrompt,
     messages: await convertToModelMessages(recent),
     tools: createChatTools({
       onEntries: (entries) => retrieved.push(...entries),
@@ -189,6 +261,39 @@ export async function POST(request: Request) {
      * the per-minute ceiling on the free tier.
      */
     stopWhen: stepCountIs(MAX_STEPS),
+    /**
+     * Spends the last step on the answer, by taking the tools away for it.
+     *
+     * `stopWhen` bounds the loop but does not require any of it to produce text,
+     * and the model does not know the budget it is working against. Given three
+     * steps it will sometimes use all three on `search` and `read` — the stream
+     * then carries three complete tool steps and finishes with no text part at
+     * all, and the visitor is shown nothing. A generated scan against the shipped
+     * model hit this on 5 of 87 turns, and the regression suite could not see it
+     * because its `[[EMPTY]]` assertions only cover eleven fixed payloads.
+     *
+     * `activeTools: []` rather than `toolChoice: "none"`, which was tried first
+     * and does not work here. The SDK sends the directive correctly — a mock
+     * provider confirms `tool_choice: "none"` on the third call — but it still
+     * sends the tool definitions alongside it, and Nemotron calls them anyway. The
+     * next scan came back with the third step making two tool calls under a
+     * `none` it had been given and ignored, and empty replies up from 5 to 9.
+     * Emptying `activeTools` removes the definitions from the request instead, so
+     * there is nothing left to call. It is not a request the provider can decline.
+     *
+     * Costs nothing: the budget is unchanged at three, and this only decides how
+     * the third is spent. A turn that had already answered never reaches here.
+     *
+     * The model answers from whatever it retrieved in the first two steps, which
+     * is the same material it would have had anyway — the grounding rules already
+     * cover the case where that is nothing, and "I haven't written about that" is
+     * a better reply than an empty bubble.
+     */
+    prepareStep: ({ stepNumber }) =>
+      stepNumber === MAX_STEPS - 1
+        ? { activeTools: [], instructions: systemPrompt + finalStepNote }
+        : {},
+    experimental_transform: createAnswerTransform,
     /** Low but not zero: grounded answers, without reading as canned. */
     temperature: 0.3,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
@@ -207,7 +312,21 @@ export async function POST(request: Request) {
      * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: { models: [CHAT_MODEL, FALLBACK_MODEL] },
+      openrouter: {
+        models: [targetModel(), FALLBACK_MODEL],
+        /**
+         * Bounds the thinking so the answer always has room, and — on a model
+         * that leaks its reasoning into the content channel — bounds the leak
+         * itself. Every Nemotron here supports it.
+         *
+         * Not `exclude: true`, which was tried and reverted: that keeps the
+         * reasoning and withholds it, so a model that does not cleanly separate
+         * the two returns nothing at all. `effort` limits how much is produced
+         * in the first place, which is the difference between a short answer and
+         * an absent one.
+         */
+        reasoning: { effort: "low" },
+      },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text
@@ -257,9 +376,31 @@ export async function POST(request: Request) {
      * having a bad afternoon.
      */
     onError: (error) => {
+      /**
+       * Checked first: this one is ours, and it is not a fault. The reply was
+       * cut on purpose, so it gets refusal copy rather than an apology.
+       */
+      if (isTripwireError(error)) return CHAT_COPY.blocked
+
       if (isUpstreamQuotaExhausted(error)) return CHAT_COPY.exhausted
       if (isUpstreamRateLimit(error)) return CHAT_COPY.busy
       if (isUpstreamUnavailable(error)) return CHAT_COPY.upstream
+
+      /**
+       * Only the unclassified case is logged, and only server-side. The three
+       * above are known weather — a daily allowance, a per-minute throttle, a
+       * provider outage — and logging them would bury this one.
+       *
+       * This branch previously discarded the error entirely, which is correct
+       * for the visitor and useless for anyone debugging. The red team suite
+       * found two payloads that reliably land here, and there was nothing in any
+       * log to say why.
+       */
+      console.error("[chat] unclassified upstream error", {
+        error: error instanceof Error ? error.stack : error,
+        question: asked.at(-1)?.slice(0, MAX_MESSAGE_LENGTH),
+      })
+
       return CHAT_COPY.error
     },
   })

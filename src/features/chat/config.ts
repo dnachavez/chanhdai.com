@@ -109,10 +109,21 @@ export const MAX_TOOL_RESULT_TOKENS = 3_000
 export const MAX_HISTORY_MESSAGES = 10
 
 /**
- * A ceiling, not a target — the style rules ask for two to four sentences. Kept
- * close to that so one runaway answer cannot bury the thread.
+ * A ceiling, not a target — the style rules ask for two to four sentences. It was
+ * kept close to that so one runaway answer could not bury the thread.
+ *
+ * Raised because the ceiling is not a budget for the answer, it is a budget for
+ * everything the model emits, and on a reasoning model that includes the
+ * thinking. `nemotron-3-ultra-550b` returned six empty replies in 33 cases —
+ * complete streams, `finishReason: "length"`, and not one character of text: the
+ * whole 800 went on reasoning and the answer never started. The same ceiling was
+ * also truncating `super-120b` answers mid-link.
+ *
+ * Nearly free to raise. OpenRouter meters `:free` models by request, not by
+ * token, so a larger ceiling costs latency and nothing else. Length is governed
+ * by the style rules; this is only the backstop.
  */
-export const MAX_OUTPUT_TOKENS = 800
+export const MAX_OUTPUT_TOKENS = 2_000
 
 /**
  * Hard cap on the always-in-context listing, asserted by the build.
@@ -177,4 +188,30 @@ export const CHAT_COPY = {
   rateLimited: `That's the limit for now. Email me: ${CONTACT_EMAIL}`,
   sessionEnded: `That's the limit for this conversation. Email me: ${CONTACT_EMAIL}`,
   unavailable: `Chat is off right now. Email me: ${CONTACT_EMAIL}`,
+  /**
+   * Shown when `output-tripwire.ts` cuts a reply that was leaking. Distinct from
+   * `error` because nothing broke: the system refused, and telling someone to
+   * report a bug for a working control wastes their time and ours. It reads as a
+   * refusal rather than as a fault, which is what it is.
+   *
+   * It also gives the red team suite something to assert on. With the generic
+   * copy here, a turn the tripwire saved and a turn the provider dropped were
+   * indistinguishable downstream, so a defence that worked was graded the same
+   * as an outage.
+   */
+  blocked: `I can't help with that. Ask me about my work instead, or email me: ${CONTACT_EMAIL}`,
+  /**
+   * Last resort for a turn that produced no text at all.
+   *
+   * The model can finish a stream having emitted only tool calls and reasoning —
+   * observed on 9 of 87 turns in a generated scan against the shipped model — and
+   * what reached the bubble in that case was nothing whatsoever. `prepareStep` in
+   * the route removes the tools for the final step so there is almost always an
+   * answer to show; this is what gets shown when there still is not one.
+   *
+   * Worded as a reply rather than as an error, because it is not one: nothing
+   * broke, the model simply had nothing to say. Terse and first-person for the
+   * same reason as every other line here.
+   */
+  empty: `I don't have an answer for that one. Ask me about my work, or email me: ${CONTACT_EMAIL}`,
 } as const

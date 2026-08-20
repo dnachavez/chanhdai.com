@@ -1,0 +1,177 @@
+name: Red team scan
+
+# Generated adversarial coverage: vulnerability classes the regression suite does
+# not contain, mutated through encoding, static jailbreak templates and Tagalog.
+#
+# Never runs on push. It is ~114 turns for the single-turn suite and ~64 for the
+# multi-turn one — minutes of wall clock and a few hundred model calls — so a
+# pull request pushed to ten times would pay for it ten times over. Ask for it
+# when a change is ready:
+#
+#   - comment `/redteam` on a pull request, or `/redteam multi-turn`
+#   - or run `pnpm redteam:scan` locally and publish with `pnpm redteam:publish`
+#
+# The result is recorded against the commit it ran on, and `redteam-status.yml`
+# reads that back on every push. Same revision, the conclusion stands.
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to scan
+        required: true
+        type: number
+      suite:
+        description: Which suite to run
+        type: choice
+        default: single-turn
+        options: [single-turn, multi-turn]
+      model:
+        description: >-
+          Model the target answers with. Defaults to a cheap paid one so the scan
+          does not spend the free daily allowance the live widget shares. Set to
+          "production" to scan the model actually shipped.
+        type: string
+        default: openai/gpt-oss-120b
+
+concurrency:
+  group: redteam-scan-${{ github.event.issue.number || inputs.pr }}
+  cancel-in-progress: true
+
+env:
+  GITHUB_CONTRIBUTIONS_API_URL: https://github-contributions-api.jogruber.de
+
+jobs:
+  scan:
+    name: Generated adversarial scan
+    # `issue_comment` fires for issues as well as pull requests, and for every
+    # comment on both. Everything except an explicit `/redteam` on a pull request
+    # is none of this workflow's business.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/redteam'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Resolve the pull request and what was asked for
+        id: ctx
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.issue.number || inputs.pr }}"
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+          # The comment picks the suite; a dispatch uses its input.
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            case "$BODY" in
+              *multi-turn*) SUITE=multi-turn ;;
+              *) SUITE=single-turn ;;
+            esac
+            MODEL=openai/gpt-oss-120b
+          else
+            SUITE="${{ inputs.suite }}"
+            MODEL="${{ inputs.model }}"
+          fi
+          echo "suite=$SUITE" >> "$GITHUB_OUTPUT"
+          if [ "$MODEL" = "production" ]; then MODEL=""; fi
+          echo "model=$MODEL" >> "$GITHUB_OUTPUT"
+
+          # The head SHA is read from the API, not from the checkout: a comment
+          # event checks out the default branch and its `github.sha` is that
+          # branch's tip, which is not what anyone is asking to have scanned.
+          HEAD_SHA=$(gh api "repos/${{ github.repository }}/pulls/$PR" --jq .head.sha)
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Acknowledge, so nobody asks twice
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST \
+            "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=rocket >/dev/null
+
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ steps.ctx.outputs.head_sha }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.5.3
+
+      - name: Install Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:chat-corpus
+      - run: pnpm redteam:snapshot
+
+      - name: Start target
+        run: |
+          pnpm build
+          pnpm start > /tmp/target.log 2>&1 &
+          npx --yes wait-on http://localhost:3000 --timeout 120000
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Empty means "whatever config.ts ships".
+          CHAT_MODEL_OVERRIDE: ${{ steps.ctx.outputs.model }}
+
+      # promptfoo exits 100 when any case fails, at any severity — an earlier
+      # comment here claimed it exits 0, which was simply wrong. Left to itself
+      # that fails the job on a medium finding and stops the evidence step from
+      # running at all, so the verdict is taken from the evidence instead, where
+      # the critical/high filter lives. A scan that ran and found things is a
+      # scan that worked.
+      - name: Scan
+        run: |
+          if [ "${{ steps.ctx.outputs.suite }}" = "multi-turn" ]; then
+            pnpm redteam:scan:multiturn || true
+          else
+            pnpm redteam:scan || true
+          fi
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      # `always()`, so a scan that fell over partway still records what it got
+      # rather than leaving the revision looking unscanned.
+      - name: Record the result against this commit
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR: ${{ steps.ctx.outputs.pr }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          SUITE: ${{ steps.ctx.outputs.suite }}
+          TARGET_MODEL: ${{ steps.ctx.outputs.model || 'production' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          OUT=redteam/output.json
+          if [ "${{ steps.ctx.outputs.suite }}" = "multi-turn" ]; then
+            OUT=redteam/output-multiturn.json
+          fi
+          node redteam/publish-evidence.mjs "$OUT"
+
+      - name: Target logs
+        if: always()
+        run: tail -n 200 /tmp/target.log || true
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        if: always()
+        with:
+          name: redteam-scan
+          path: redteam/output*.json
+          if-no-files-found: ignore
