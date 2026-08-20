@@ -54,10 +54,27 @@ export const maxDuration = 60
  * it is used, matching the guard below — a module-level client would capture an
  * undefined key at import time and fail later with something less legible.
  */
+/**
+ * Overridable so a red team run does not have to compete with the live site for
+ * the same scarce resource.
+ *
+ * `CHAT_MODEL` is `:free`, and OpenRouter meters every free model against one
+ * account-wide allowance of 1,000 requests a day. A generated scan is a few
+ * hundred turns, so running one spends most of a day's visitor capacity to test
+ * capacity — and the first attempt did exactly that, leaving ~200 requests for
+ * everyone else. Pointing a scan at a paid model costs cents and draws on the
+ * balance instead.
+ *
+ * Read here rather than in `config.ts` because that module is imported by client
+ * components for its copy, and a server-only variable has no business in the
+ * browser bundle. Unset in every normal deployment, including production.
+ */
+const targetModel = () => process.env.CHAT_MODEL_OVERRIDE || CHAT_MODEL
+
 function model(onTrip: (hit: TripwireHit) => void) {
   return wrapLanguageModel({
     model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY })(
-      CHAT_MODEL
+      targetModel()
     ),
     /**
      * Wraps the model rather than post-processing the stream in this file, so it
@@ -237,7 +254,7 @@ export async function POST(request: Request) {
      * request body it had actually sent.
      */
     providerOptions: {
-      openrouter: { models: [CHAT_MODEL, FALLBACK_MODEL] },
+      openrouter: { models: [targetModel(), FALLBACK_MODEL] },
     },
     onChunk: ({ chunk }) => {
       if (chunk.type === "text-delta") answer += chunk.text

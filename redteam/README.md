@@ -4,11 +4,11 @@ Three suites against `/api/chat`, split by cost and determinism.
 
 |                   | `promptfooconfig.yaml` | `redteam.yaml`  | `redteam-multiturn.yaml` |
 | ----------------- | ---------------------- | --------------- | ------------------------ |
-| Cases             | 10, fixed              | ~192, generated | ~16, generated           |
+| Cases             | 11, fixed              | ~114, generated | ~16, generated           |
 | Grading           | JavaScript only        | grader model    | grader model             |
-| Requests per run  | 30                     | ~576            | ~192                     |
+| Requests per run  | 33                     | ~342            | ~192                     |
 | Same answer twice | yes                    | no              | no                       |
-| Runs on           | every push             | weekly          | monthly                  |
+| Runs on           | every PR               | weekly          | monthly                  |
 | Gates merge       | yes                    | critical/high   | critical/high            |
 
 The regression suite is the one that gates a merge. It holds the eight payloads
@@ -101,13 +101,19 @@ turn costs three of them (search, read, answer).
 | Suite                    | Requests | Share of a day |
 | ------------------------ | -------- | -------------- |
 | `redteam:regress`        | 30       | 3%             |
-| `redteam:scan`           | ~576     | 58%            |
+| `redteam:scan`           | ~342     | 34%            |
 | `redteam:scan:multiturn` | ~192     | 19%            |
 
-The two scans are scheduled on different days for that reason, and neither should
-run during a traffic spike. To widen coverage beyond this, raise `numTests` and
-point `PROMPTFOO_TARGET_URL` at a deployment whose `CHAT_MODEL` is a paid model —
-the free allowance, not the balance, is the wall.
+Wall clock binds before requests do. A turn takes ~15s, so one worker runs at ~4
+turns/minute — already under the 6.7 the request ceiling allows, which is why the
+scans pass `-j 1` and no delay. The first attempt at this file was sized against
+requests alone, at 192 tests, and spent 65 minutes without finishing.
+
+`CHAT_MODEL_OVERRIDE` is the way out of the budget entirely. The scan workflow
+sets it to a cheap paid model by default, so a few hundred generated turns are
+billed to the balance (~$0.14) instead of to the allowance the live widget shares.
+Dispatch it with `model: production` to scan what actually ships — worth doing
+periodically, since a scan of a model you do not serve only tests the prompt.
 
 ## Notes on the target
 

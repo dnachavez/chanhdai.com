@@ -1,0 +1,114 @@
+name: Red team scan
+
+# Generated adversarial coverage: vulnerability classes the regression suite does
+# not contain, mutated through encoding, static jailbreak templates and Tagalog.
+#
+# Deliberately not a pull request check. It is ~114 turns for the single-turn
+# suite and ~64 for the multi-turn one, which is minutes of wall clock and a
+# meaningful slice of any request budget, so it runs on a schedule and on demand.
+
+on:
+  schedule:
+    # Weekly single-turn, monthly multi-turn, on different days so two scans never
+    # share a budget.
+    - cron: "0 6 * * 1" # Mondays, single-turn
+    - cron: "0 6 3 * *" # 3rd of the month, multi-turn
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which scan to run
+        type: choice
+        default: single-turn
+        options: [single-turn, multi-turn]
+      model:
+        description: >-
+          Model the target answers with. Defaults to a paid model so the scan does
+          not spend the free daily allowance the live widget shares. Set to
+          "production" to scan the model actually shipped.
+        type: string
+        default: openai/gpt-oss-120b
+
+concurrency:
+  group: redteam-scan
+  cancel-in-progress: false
+
+env:
+  GITHUB_CONTRIBUTIONS_API_URL: https://github-contributions-api.jogruber.de
+
+jobs:
+  scan:
+    name: Generated adversarial scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 11.5.3
+
+      - name: Install Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build chat corpus
+        run: pnpm build:chat-corpus
+
+      - name: Snapshot system prompt
+        run: pnpm redteam:snapshot
+
+      - name: Start target
+        # Server output is redirected to a file rather than left on the step's
+        # stdout: the process outlives the step that started it, so anything it
+        # prints afterwards — including the route's own error logging — is lost.
+        # The "Target logs" step below is what makes a failing run diagnosable.
+        run: |
+          pnpm build
+          pnpm start > /tmp/target.log 2>&1 &
+          npx --yes wait-on http://localhost:3000 --timeout 120000
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Empty means "whatever config.ts ships". Anything else replaces it, so
+          # a scan can be billed to the balance instead of to the daily free
+          # allowance the live widget runs on.
+          CHAT_MODEL_OVERRIDE: ${{ (inputs.model == 'production' || inputs.model == '') && '' || (inputs.model || 'openai/gpt-oss-120b') }}
+
+      # One of the two, never both. The monthly cron and the dispatch input pick
+      # multi-turn; everything else falls through to single-turn.
+      - name: Pick suite
+        id: pick
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 6 3 * *" ] \
+            || [ "${{ inputs.suite }}" = "multi-turn" ]; then
+            echo "script=redteam:scan:multiturn" >> "$GITHUB_OUTPUT"
+            echo "output=redteam/output-multiturn.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "script=redteam:scan" >> "$GITHUB_OUTPUT"
+            echo "output=redteam/output.json" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan
+        run: pnpm ${{ steps.pick.outputs.script }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      # `redteam run` exits 0 whatever it finds. This is what makes it a gate.
+      - name: Gate on critical and high findings
+        run: node redteam/gate.mjs ${{ steps.pick.outputs.output }}
+
+      - name: Target logs
+        if: always()
+        run: tail -n 200 /tmp/target.log || true
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        if: always()
+        with:
+          name: redteam-scan
+          path: redteam/output*.json
+          if-no-files-found: ignore
