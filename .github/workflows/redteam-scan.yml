@@ -3,47 +3,42 @@ name: Red team scan
 # Generated adversarial coverage: vulnerability classes the regression suite does
 # not contain, mutated through encoding, static jailbreak templates and Tagalog.
 #
-# Deliberately not a pull request check. It is ~114 turns for the single-turn
-# suite and ~64 for the multi-turn one, which is minutes of wall clock and a
-# meaningful slice of any request budget, so it runs on a schedule and on demand.
+# Never runs on push. It is ~114 turns for the single-turn suite and ~64 for the
+# multi-turn one — minutes of wall clock and a few hundred model calls — so a
+# pull request pushed to ten times would pay for it ten times over. Ask for it
+# when a change is ready:
+#
+#   - comment `/redteam` on a pull request, or `/redteam multi-turn`
+#   - or run `pnpm redteam:scan` locally and publish with `pnpm redteam:publish`
+#
+# The result is recorded against the commit it ran on, and `redteam-status.yml`
+# reads that back on every push. Same revision, the conclusion stands.
 
 on:
-  # Runs on chat-related pull requests as well as on the schedule. Affordable
-  # only because of the model override below: against the shipped `:free` model
-  # this would be a third of the day's visitor capacity per PR, but against a
-  # cheap paid one it is ~$0.14 and touches no shared allowance.
-  pull_request:
-    branches: [main]
-    paths:
-      - "src/features/chat/**"
-      - "src/app/api/chat/**"
-      - "src/features/portfolio/data/**"
-      - "src/features/doc/content/**"
-      - "redteam/**"
-      - ".github/workflows/redteam*.yml"
-  schedule:
-    # Weekly single-turn, monthly multi-turn, on different days so two scans never
-    # share a budget.
-    - cron: "0 6 * * 1" # Mondays, single-turn
-    - cron: "0 6 3 * *" # 3rd of the month, multi-turn
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
+      pr:
+        description: Pull request number to scan
+        required: true
+        type: number
       suite:
-        description: Which scan to run
+        description: Which suite to run
         type: choice
         default: single-turn
         options: [single-turn, multi-turn]
       model:
         description: >-
-          Model the target answers with. Defaults to a paid model so the scan does
-          not spend the free daily allowance the live widget shares. Set to
+          Model the target answers with. Defaults to a cheap paid one so the scan
+          does not spend the free daily allowance the live widget shares. Set to
           "production" to scan the model actually shipped.
         type: string
         default: openai/gpt-oss-120b
 
 concurrency:
-  group: redteam-scan
-  cancel-in-progress: false
+  group: redteam-scan-${{ github.event.issue.number || inputs.pr }}
+  cancel-in-progress: true
 
 env:
   GITHUB_CONTRIBUTIONS_API_URL: https://github-contributions-api.jogruber.de
@@ -51,10 +46,64 @@ env:
 jobs:
   scan:
     name: Generated adversarial scan
+    # `issue_comment` fires for issues as well as pull requests, and for every
+    # comment on both. Everything except an explicit `/redteam` on a pull request
+    # is none of this workflow's business.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/redteam'))
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      issues: write
     steps:
+      - name: Resolve the pull request and what was asked for
+        id: ctx
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.issue.number || inputs.pr }}"
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+          # The comment picks the suite; a dispatch uses its input.
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            case "$BODY" in
+              *multi-turn*) SUITE=multi-turn ;;
+              *) SUITE=single-turn ;;
+            esac
+            MODEL=openai/gpt-oss-120b
+          else
+            SUITE="${{ inputs.suite }}"
+            MODEL="${{ inputs.model }}"
+          fi
+          echo "suite=$SUITE" >> "$GITHUB_OUTPUT"
+          if [ "$MODEL" = "production" ]; then MODEL=""; fi
+          echo "model=$MODEL" >> "$GITHUB_OUTPUT"
+
+          # The head SHA is read from the API, not from the checkout: a comment
+          # event checks out the default branch and its `github.sha` is that
+          # branch's tip, which is not what anyone is asking to have scanned.
+          HEAD_SHA=$(gh api "repos/${{ github.repository }}/pulls/$PR" --jq .head.sha)
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Acknowledge, so nobody asks twice
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST \
+            "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=rocket >/dev/null
+
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: ${{ steps.ctx.outputs.head_sha }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
@@ -67,56 +116,48 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build chat corpus
-        run: pnpm build:chat-corpus
-
-      - name: Snapshot system prompt
-        run: pnpm redteam:snapshot
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:chat-corpus
+      - run: pnpm redteam:snapshot
 
       - name: Start target
-        # Server output is redirected to a file rather than left on the step's
-        # stdout: the process outlives the step that started it, so anything it
-        # prints afterwards — including the route's own error logging — is lost.
-        # The "Target logs" step below is what makes a failing run diagnosable.
         run: |
           pnpm build
           pnpm start > /tmp/target.log 2>&1 &
           npx --yes wait-on http://localhost:3000 --timeout 120000
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          # Empty means "whatever config.ts ships". Anything else replaces it, so
-          # a scan can be billed to the balance instead of to the daily free
-          # allowance the live widget runs on.
-          # `inputs` is empty on a pull request or a schedule, so the fallback
-          # is what those events get. Only an explicit "production" clears the
-          # override and puts the scan back on the model the site ships.
-          CHAT_MODEL_OVERRIDE: ${{ inputs.model == 'production' && '' || (inputs.model != '' && inputs.model || 'openai/gpt-oss-120b') }}
-
-      # One of the two, never both. The monthly cron and the dispatch input pick
-      # multi-turn; everything else falls through to single-turn.
-      - name: Pick suite
-        id: pick
-        run: |
-          if [ "${{ github.event.schedule }}" = "0 6 3 * *" ] \
-            || [ "${{ inputs.suite }}" = "multi-turn" ]; then
-            echo "script=redteam:scan:multiturn" >> "$GITHUB_OUTPUT"
-            echo "output=redteam/output-multiturn.json" >> "$GITHUB_OUTPUT"
-          else
-            echo "script=redteam:scan" >> "$GITHUB_OUTPUT"
-            echo "output=redteam/output.json" >> "$GITHUB_OUTPUT"
-          fi
+          # Empty means "whatever config.ts ships".
+          CHAT_MODEL_OVERRIDE: ${{ steps.ctx.outputs.model }}
 
       - name: Scan
-        run: pnpm ${{ steps.pick.outputs.script }}
+        run: |
+          if [ "${{ steps.ctx.outputs.suite }}" = "multi-turn" ]; then
+            pnpm redteam:scan:multiturn
+          else
+            pnpm redteam:scan
+          fi
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      # `redteam run` exits 0 whatever it finds. This is what makes it a gate.
-      - name: Gate on critical and high findings
-        run: node redteam/gate.mjs ${{ steps.pick.outputs.output }}
+      # `always()`, because a scan that found critical issues still exits
+      # non-zero through the gate and its result is exactly what needs recording.
+      - name: Record the result against this commit
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR: ${{ steps.ctx.outputs.pr }}
+          HEAD_SHA: ${{ steps.ctx.outputs.head_sha }}
+          SUITE: ${{ steps.ctx.outputs.suite }}
+          TARGET_MODEL: ${{ steps.ctx.outputs.model || 'production' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          OUT=redteam/output.json
+          if [ "${{ steps.ctx.outputs.suite }}" = "multi-turn" ]; then
+            OUT=redteam/output-multiturn.json
+          fi
+          node redteam/publish-evidence.mjs "$OUT"
 
       - name: Target logs
         if: always()

@@ -48,6 +48,28 @@ To run against preview instead of localhost:
 PROMPTFOO_TARGET_URL=https://<preview>.vercel.app/api/chat pnpm redteam:regress
 ```
 
+## Running the scan
+
+The scan never runs on push. It is a few hundred model calls, so a pull request
+pushed to ten times would pay for it ten times. Ask for one when a change is
+ready, and the result is recorded against that exact commit:
+
+- comment `/redteam` on the pull request, or `/redteam multi-turn`
+- or run it locally and publish the result:
+
+```bash
+pnpm redteam:scan
+PR=<number> HEAD_SHA=$(git rev-parse HEAD) \
+  GITHUB_TOKEN=$(gh auth token) pnpm redteam:publish
+```
+
+`redteam-status.yml` runs on every push and costs one API call. If the recorded
+evidence is for the current head it republishes that conclusion; otherwise the
+check reports the revision as unscanned and says how to ask. Unscanned is
+reported as `action_required`, not as a failure — nothing is known to be wrong
+with it, nobody has looked, and reporting those the same way teaches people to
+merge through red.
+
 ## Credentials
 
 `OPENROUTER_API_KEY` is the only one needed. promptfoo grades with an OpenAI model

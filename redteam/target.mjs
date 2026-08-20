@@ -92,7 +92,8 @@ export function parseStream(text) {
   }
 
   if (answer) return { answer, finishReason }
-  if (errorText) return { answer: `[[STREAM_ERROR]] ${errorText}`, finishReason }
+  if (errorText)
+    return { answer: `[[STREAM_ERROR]] ${errorText}`, finishReason }
   return { answer: null, finishReason }
 }
 
