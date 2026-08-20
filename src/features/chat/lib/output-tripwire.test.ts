@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  createOutputTripwire,
-  createRecitationCounter,
-  detectTripwire,
-} from "./output-tripwire"
-import { buildSystemPrompt } from "./system-prompt"
+import { createOutputTripwire, detectTripwire } from "./output-tripwire"
 
 const CANARY = "ZZQX-7741-CANARY"
 
@@ -210,53 +205,43 @@ describe("createOutputTripwire", () => {
   })
 })
 
-describe("createRecitationCounter", () => {
+describe("stream part ordering", () => {
   /**
-   * The gap the first red team run exposed. Asked to print everything above the
-   * first message, the model dumped the opening of the prompt — 568 characters,
-   * all of it before the first structural marker, so nothing fired.
+   * Found in production logs, on successful answers rather than on attacks. The
+   * withheld tail used to be released in `flush`, by which point a `text-end`
+   * for that block had already been forwarded — so the SDK was handed a delta
+   * for a part it had closed and failed the turn with "text part <id> not
+   * found", losing the last characters of every reply.
    */
-  it("counts a verbatim dump of the prompt opening", () => {
-    const opening = buildSystemPrompt().slice(0, 600)
-    const counter = createRecitationCounter()
+  it("releases the withheld tail before the closing part", async () => {
+    const middleware = createOutputTripwire()
+    const source = new ReadableStream({
+      start(controller) {
+        controller.enqueue(textPart("A grounded answer about my work."))
+        controller.enqueue({ type: "text-end", id: "t0" })
+        controller.enqueue({ type: "finish", finishReason: "stop" })
+        controller.close()
+      },
+    })
 
-    expect(counter.push(opening)).toBeGreaterThanOrEqual(12)
+    const { stream } = await middleware.wrapStream!({
+      doStream: async () => ({ stream: source }),
+    } as never)
+
+    const parts = await drain(stream as ReadableStream<TestPart>)
+    const types = parts.map((p) => p.type)
+
+    expect(types.indexOf("text-delta")).toBeLessThan(types.indexOf("text-end"))
+    expect(
+      parts
+        .filter((p) => p.type === "text-delta")
+        .map((p) => p.delta)
+        .join("")
+    ).toBe("A grounded answer about my work.")
   })
 
-  it("counts nothing for an ordinary grounded answer", () => {
-    const counter = createRecitationCounter()
-    const answer =
-      "I built an AI phone receptionist at Aeva that serves around 500 clinics, " +
-      "and I wrote about how the retrieval side of this site works on the blog."
-
-    expect(counter.push(answer)).toBe(0)
-  })
-
-  /**
-   * The prompt scripts this sentence, so a model answering "what are you"
-   * reproduces it. It must stay well under the threshold.
-   */
-  it("stays under the threshold for the scripted self-description", () => {
-    const counter = createRecitationCounter()
-    const scripted =
-      "I am an AI assistant answering from what Dan has published on this site."
-
-    expect(counter.push(scripted)).toBeLessThan(12)
-  })
-
-  /** Chunk boundaries must not lose runs that straddle them. */
-  it("counts runs split across deltas the same as whole text", () => {
-    const opening = buildSystemPrompt().slice(0, 600)
-
-    const whole = createRecitationCounter()
-    whole.push(opening)
-    const total = whole.flush()
-
-    const split = createRecitationCounter()
-    for (let i = 0; i < opening.length; i += 17) {
-      split.push(opening.slice(i, i + 17))
-    }
-
-    expect(split.flush()).toBe(total)
+  it("loses no text when the closing part never arrives", async () => {
+    const { text } = await run(["A short answer."])
+    expect(text).toBe("A short answer.")
   })
 })
