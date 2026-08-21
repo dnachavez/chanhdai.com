@@ -22,7 +22,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "pnpm build:chat-corpus && next build",
+    "build": "pnpm build:chat-corpus && NEXT_PUBLIC_BUILD_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ) next build",
     "build:chat-corpus": "TSX_TSCONFIG_PATH=tsconfig.scripts.json node --import tsx --import ./src/scripts/react-global.mjs src/scripts/build-chat-corpus.mts",
     "start": "next start",
     "preview": "pnpm build && next start",
