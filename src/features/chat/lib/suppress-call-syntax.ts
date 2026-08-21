@@ -59,6 +59,14 @@ export function createCallSyntaxSuppressor() {
 
       if (decided) return text
 
+      /**
+       * An empty delta must not settle anything. Providers emit them, and so does
+       * the narration window upstream on every delta it holds — and a `head` of
+       * "" cannot match a partial opener, so without this the very first one
+       * decides the window and disarms the guard for the rest of the message.
+       */
+      if (text === "") return ""
+
       head += text
 
       if (OPENER.test(head)) {

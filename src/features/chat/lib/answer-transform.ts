@@ -2,6 +2,7 @@ import type { TextStreamPart, ToolSet } from "ai"
 
 import { CHAT_COPY } from "../config"
 import { createCallSyntaxSuppressor } from "./suppress-call-syntax"
+import { createNarrationSuppressor } from "./suppress-narration"
 
 /**
  * Guarantees the visitor gets exactly one thing: an answer, or a sentence saying
@@ -20,35 +21,64 @@ import { createCallSyntaxSuppressor } from "./suppress-call-syntax"
  *   turn that was nothing but call syntax then falls through to the same
  *   fallback line as an empty one.
  *
+ * And one found later, by the merge gate rather than a scan: a reasoning model
+ * putting its deliberation in the content channel unlabelled, which reaches the
+ * bubble the same way and exhausts the output budget before an answer starts.
+ * `createNarrationSuppressor` drops that, into the same fallback.
+ *
+ * Narration is suppressed before call syntax so the decision is made on the
+ * model's own first words. Reversing them would let the call-syntax window
+ * release the opening of a monologue before it had been judged.
+ *
  * The fallback is enqueued ahead of the `finish` part so it belongs to the same
  * message rather than arriving as a second one, and is skipped when the stream
  * already carries an error — the client renders those itself and should not have
  * an answer stapled underneath.
  */
 export function createAnswerTransform<TOOLS extends ToolSet>() {
-  const suppressor = createCallSyntaxSuppressor()
+  let narration = createNarrationSuppressor()
+  const callSyntax = createCallSyntaxSuppressor()
   let sawText = false
   let sawError = false
+
+  /** Both windows drain in order, so held text is judged before it is emitted. */
+  const drain = () => callSyntax.push(narration.flush()) + callSyntax.flush()
 
   return new TransformStream<TextStreamPart<TOOLS>, TextStreamPart<TOOLS>>({
     transform(part, controller) {
       if (part.type === "error") sawError = true
 
+      /**
+       * Judged per block rather than per stream, because narration is a property
+       * of how a block opens. A model that says "Let me look that up" alongside a
+       * tool call in an early step would otherwise settle the question for the
+       * stream and leave the answer itself unguarded.
+       */
+      if (part.type === "text-start") narration = createNarrationSuppressor()
+
       if (part.type === "text-delta") {
-        const visible = suppressor.push(part.text)
+        const visible = callSyntax.push(narration.push(part.text))
         if (visible === "") return
         if (visible.trim() !== "") sawText = true
         controller.enqueue({ ...part, text: visible })
         return
       }
 
-      if (part.type === "finish") {
-        const tail = suppressor.flush()
+      /**
+       * The window is released while its block is still open. It cannot wait for
+       * `finish`: a `text-end` forwarded first closes the block, and a delta
+       * arriving afterwards addresses a part the SDK has already dropped — which
+       * is silent, and swallowed every reply short enough to still be held.
+       */
+      if (part.type === "text-end") {
+        const tail = drain()
         if (tail !== "") {
           if (tail.trim() !== "") sawText = true
-          controller.enqueue({ type: "text-delta", id: "tail", text: tail })
+          controller.enqueue({ type: "text-delta", id: part.id, text: tail })
         }
+      }
 
+      if (part.type === "finish") {
         if (!sawText && !sawError) {
           const id = "empty-fallback"
           controller.enqueue({ type: "text-start", id })

@@ -8,11 +8,7 @@ import remarkGfm from "remark-gfm"
 import { LINKABLE_PATHS } from "@/generated/chat-client"
 
 import { inlineCitations } from "../lib/inline-citations"
-import {
-  applyDerivedHighlight,
-  highlightFromLinkText,
-  normalizeLinkBrackets,
-} from "../lib/normalize-links"
+import { normalizeLinkBrackets, resolveHighlight } from "../lib/normalize-links"
 import { stripReasoningArtifacts } from "../lib/strip-reasoning"
 
 /**
@@ -113,8 +109,9 @@ export function ChatMarkdown({
 
           const internal = resolveInternalPath(href)
           if (internal) {
-            const resolved = applyDerivedHighlight(
-              highlightFromLinkText(internal, plainText(children)),
+            const resolved = resolveHighlight(
+              internal,
+              plainText(children),
               highlights
             )
 

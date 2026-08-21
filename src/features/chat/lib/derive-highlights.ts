@@ -83,17 +83,30 @@ function longestCommonRun(source: Token[], answer: Token[]) {
 }
 
 /**
- * Metadata lines are not prose on the page.
+ * What the entry actually reads as on the page.
  *
- * "Company: Aeva AI Receptionist" would match an answer that merely names the
- * employer, producing a highlight over a label the visitor cannot see — the page
- * renders the company name as a heading, not as `Company: …`.
+ * Metadata lines go first: "Company: Aeva AI Receptionist" would match an answer
+ * that merely names the employer, producing a highlight over a label the visitor
+ * cannot see — the page renders the company name as a heading, not as
+ * `Company: …`.
+ *
+ * Then the link and image syntax, because the phrase is sliced straight out of
+ * this string and has to be findable in rendered text on both ends. A run
+ * crossing `[Fox Three Partners](https://fox3partners.com)` used to yield
+ * "…platform for [Fox Three Partners" — a bracket that appears nowhere on the
+ * page and nowhere in the answer, so the highlight and the inline citation both
+ * silently died. Eighteen of the corpus's entries carry an inline link.
+ *
+ * Images drop entirely rather than unwrapping, since alt text is not on the page
+ * either.
  */
 function proseOf(entry: CorpusEntry) {
   return entry.text
     .split("\n")
     .filter((line) => !/^[A-Z][A-Za-z ]{2,20}: /.test(line))
     .join("\n")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
 }
 
 /**

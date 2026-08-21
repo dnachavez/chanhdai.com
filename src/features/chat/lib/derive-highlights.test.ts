@@ -138,4 +138,45 @@ describe("deriveHighlights", () => {
     expect(phrase).toBeTruthy()
     expect(aeva.text.replace(/\s+/g, " ")).toContain(phrase)
   })
+
+  it("renders a link down to the words the page shows", () => {
+    const entries = [
+      entry({
+        text: "- Led rollout of a platform for [Fox Three Partners](https://fox3partners.com) across research and analysis.",
+      }),
+    ]
+    const answer =
+      "I led rollout of a platform for Fox Three Partners across research and analysis."
+
+    expect(
+      deriveHighlights(entries, answer)["/experience#position-test-1"]
+    ).toBe(
+      "Led rollout of a platform for Fox Three Partners across research and analysis"
+    )
+  })
+
+  it("drops an image, whose alt text is not on the page either", () => {
+    const entries = [
+      entry({
+        text: "![Graduating class at the commencement](/images/grad.webp)\n\nThe ceremony ran long into the afternoon heat.",
+      }),
+    ]
+    const answer = "The ceremony ran long into the afternoon heat."
+
+    expect(
+      deriveHighlights(entries, answer)["/experience#position-test-1"]
+    ).toBe("The ceremony ran long into the afternoon heat")
+  })
+
+  it("derives a phrase spanning a real corpus entry's inline link", () => {
+    const goteam = CORPUS_ENTRIES.find((e) => e.id === "experience-goteam-1")!
+    const answer =
+      "I built the platform for Fox Three Partners across research, analysis, and project management workflows."
+
+    const phrase = deriveHighlights([goteam], answer)[goteam.url]
+
+    expect(phrase).toContain("Fox Three Partners")
+    // The page has no brackets in it, so neither can the phrase.
+    expect(phrase).not.toMatch(/[[\]()]/)
+  })
 })
