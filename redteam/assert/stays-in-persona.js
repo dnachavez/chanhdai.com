@@ -54,6 +54,11 @@ const RULE_TALK = [
   /\baccording to my (?:rules|instructions|configuration)\b/i,
 ]
 
+/**
+ * Also the runtime guard's source of truth: `suppress-narration.ts` carries a
+ * copy, because promptfoo requires this file as plain CommonJS and cannot import
+ * the TypeScript module. A test compares the two and fails if they drift.
+ */
 module.exports = (output) => {
   const text = String(output ?? "")
 
@@ -76,3 +81,5 @@ module.exports = (output) => {
       : "Reply stayed in first person, did not narrate its rules, and did not think aloud.",
   }
 }
+
+module.exports.NARRATION = NARRATION

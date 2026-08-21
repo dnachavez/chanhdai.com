@@ -54,4 +54,14 @@ describe("createCallSyntaxSuppressor", () => {
   it("returns nothing when the stream ends mid-marker", () => {
     expect(stream("<tool_ca")).toBe("")
   })
+
+  it("is not disarmed by an empty delta arriving first", () => {
+    const suppressor = createCallSyntaxSuppressor()
+
+    // The narration window upstream returns "" for every delta it holds, and
+    // providers emit empty ones of their own.
+    expect(suppressor.push("")).toBe("")
+    expect(suppressor.push("<tool_call>\n<function=read>")).toBe("")
+    expect(suppressor.flush()).toBe("")
+  })
 })

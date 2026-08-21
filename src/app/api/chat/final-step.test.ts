@@ -139,6 +139,45 @@ describe("the final step", () => {
     expect(await result.text).toBe(CHAT_COPY.empty)
   })
 
+  it("never shows the model deliberating instead of answering", async () => {
+    const { result } = run(
+      () =>
+        [
+          { type: "stream-start", warnings: [] },
+          {
+            type: "response-metadata",
+            id: "r",
+            modelId: "m",
+            timestamp: new Date(0),
+          },
+          { type: "text-start", id: "r" },
+          {
+            type: "text-delta",
+            id: "r",
+            delta: 'Now we need to answer: "What did you work on at Aeva?"',
+          },
+          {
+            type: "text-delta",
+            id: "r",
+            delta:
+              " We have the entry text. We need to answer in first person.",
+          },
+          { type: "text-end", id: "r" },
+          /**
+           * `length`, because the reply this reproduces spent its whole output
+           * budget on the monologue and stopped mid-word without ever answering.
+           */
+          {
+            type: "finish",
+            finishReason: "length",
+            usage: { inputTokens: 1, outputTokens: 2000, totalTokens: 2001 },
+          },
+        ] as never[]
+    )
+
+    expect(await result.text).toBe(CHAT_COPY.empty)
+  })
+
   it("leaves a real answer alone", async () => {
     const { result } = run(
       () =>
