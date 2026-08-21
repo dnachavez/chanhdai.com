@@ -183,14 +183,14 @@ function markMatches(root: Element, phrase: string) {
 
   if (spans.length === 0) return null
 
+  const marksBySpan: HTMLElement[][] = spans.map(() => [])
+
   /**
    * Right to left, because surrounding a range splits its text node and leaves
    * the original as the part before the split — so every offset to the left of
    * one that has already been wrapped is still valid, and none of this has to be
    * recomputed as the DOM changes underneath it.
    */
-  const marksBySpan: HTMLElement[][] = spans.map(() => [])
-
   for (let index = chunks.length - 1; index >= 0; index -= 1) {
     const { node, start } = chunks[index]
     const end = start + (node.nodeValue ?? "").length
