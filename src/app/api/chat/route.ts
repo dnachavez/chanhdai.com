@@ -45,11 +45,25 @@ import type { CorpusEntry } from "@/features/chat/types/corpus"
 export const dynamic = "force-dynamic"
 
 /**
- * Three model calls plus two synchronous in-process searches. Raised from 30
- * with the move to OpenRouter, which routes to a provider rather than serving
- * the model itself and is correspondingly slower per call.
+ * Three model calls plus two synchronous in-process searches, against a `:free`
+ * endpoint OpenRouter queues behind paid traffic.
+ *
+ * 60 was mistaken for the Hobby ceiling and was in fact only this line. Fluid
+ * compute lifts Hobby to 300s — the same default Pro gets — so the previous
+ * value was killing turns a quarter of the way into the budget available, and
+ * the ones it killed were the expensive ones: a turn that reached the third step
+ * with the retrieved text in context died mid-answer, leaving an empty bubble
+ * after a thought process the visitor had watched succeed.
+ *
+ * Requires fluid compute to be on for the project. It is the default only for
+ * projects created after April 2025, and this one predates that by two years.
+ *
+ * A ceiling, not a target — the wait is the provider queue, and nothing here
+ * spends the extra time deliberately. Free to raise, too: fluid bills active
+ * CPU, and that meter pauses while the function is blocked on the upstream
+ * stream, which is nearly all of a turn.
  */
-export const maxDuration = 60
+export const maxDuration = 300
 
 /**
  * Overridable so a red team run does not have to compete with the live site for
