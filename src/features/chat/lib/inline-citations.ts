@@ -96,11 +96,16 @@ function wordPattern(word: string) {
 }
 
 /**
- * Bracketed bare paths with no target — `[/testimonials]` — which Markdown
- * renders as literal text. Emitted when the model is told to link its words and
- * reaches for the syntax without a destination.
+ * Bracketed bare paths with no target — `[/testimonials]`, `【/testimonials】` —
+ * which Markdown renders as literal text. Emitted when the model is told to link
+ * its words and reaches for the syntax without a destination.
+ *
+ * Full-width brackets are included because that is the form gpt-oss reaches for
+ * once the words above it are already linked: `normalizeLinkBrackets` only
+ * converts `【…】` that a `(` follows, so the target-less kind arrives here
+ * intact. A path is required inside, so `【brackets】` in prose is left alone.
  */
-const ORPHAN_PATH_LINK = /\s*\[(\/[^\]\s]*)\](?!\()/g
+const ORPHAN_PATH_LINK = /\s*[[【](\/[^\]】\s]*)[\]】](?!\()/g
 
 /**
  * A short trailing link, as opposed to a cited excerpt. Removed once the same

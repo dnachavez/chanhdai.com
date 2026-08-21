@@ -37,6 +37,33 @@ describe("inlineCitations", () => {
     )
   })
 
+  it("removes a full-width bracketed bare path too", () => {
+    const answer =
+      'Louis Evans said, "We\'ve been really happy with your performance."【/testimonials】'
+    const highlights = {
+      "/testimonials": "We've been really happy with your performance",
+    }
+
+    const out = inlineCitations(answer, highlights)
+    expect(out).toContain("[We've been really happy with your performance](")
+    expect(out).not.toContain("【")
+    expect(out).not.toContain("】")
+  })
+
+  it("pulls the sentence's period back over a removed full-width path", () => {
+    const answer =
+      "Those lessons became the muscles I leaned on 【/blog/the-long-way-to-magna-cum-laude】 ."
+
+    expect(inlineCitations(answer, {})).toBe(
+      "Those lessons became the muscles I leaned on."
+    )
+  })
+
+  it("leaves full-width brackets that hold prose rather than a path", () => {
+    const answer = "The post uses 【brackets】 as a stylistic device."
+    expect(inlineCitations(answer, {})).toBe(answer)
+  })
+
   it("drops a short trailing link once the words above are linked", () => {
     const answer =
       "I led migration of backend services to code — [the Aeva role](/experience#position-aeva-1)."
