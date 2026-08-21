@@ -132,4 +132,44 @@ describe("inlineCitations", () => {
       answer
     )
   })
+
+  /**
+   * The system prompt used to spend five lines forbidding these two shapes. It no
+   * longer does, on the grounds that this function repairs both — so these are
+   * what that cut rests on, not incidental coverage. See the Linking note in
+   * `system-prompt.ts`.
+   */
+  describe("shapes the prompt no longer has to forbid", () => {
+    const url = "/experience#position-aeva-1"
+    const highlights = {
+      [url]: "phone receptionist serving ~500 clinics",
+    }
+
+    it("rewrites an appended link into an inline one, and drops the label", () => {
+      const appended =
+        "I built an AI phone receptionist serving ~500 clinics — [the Aeva role](" +
+        url +
+        ")."
+
+      const output = inlineCitations(appended, highlights)
+
+      expect(output).toContain("[phone receptionist serving ~500 clinics](")
+      expect(output).not.toContain("[the Aeva role]")
+    })
+
+    it("adds the link when the model wrote none", () => {
+      const bare =
+        "I built an AI phone receptionist serving ~500 clinics, on React and Node.js."
+
+      expect(inlineCitations(bare, highlights)).toContain(
+        "[phone receptionist serving ~500 clinics](" + url
+      )
+    })
+
+    it("adds nothing when the answer reuses no wording, which is why the prompt still asks for a link", () => {
+      const paraphrase =
+        "I made a telephone answering robot for medical offices."
+      expect(inlineCitations(paraphrase, {})).toBe(paraphrase)
+    })
+  })
 })
