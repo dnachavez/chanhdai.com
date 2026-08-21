@@ -4,6 +4,7 @@ import {
   applyDerivedHighlight,
   highlightFromLinkText,
   normalizeLinkBrackets,
+  resolveHighlight,
 } from "./normalize-links"
 
 /**
@@ -91,5 +92,42 @@ describe("applyDerivedHighlight", () => {
 
   it("is a no-op when the message carries no highlights", () => {
     expect(applyDerivedHighlight("/experience", undefined)).toBe("/experience")
+  })
+})
+
+describe("resolveHighlight", () => {
+  const highlights = {
+    "/experience#position-aeva-1": "reducing incident resolution time by 60%",
+  }
+
+  /** The link the assistant actually wrote in the report this fixes. */
+  const title = "Senior Full Stack Developer at Aeva AI Receptionist"
+
+  it("prefers the derived phrase over link text long enough to pass for an excerpt", () => {
+    expect(
+      resolveHighlight("/experience#position-aeva-1", title, highlights)
+    ).toBe(
+      "/experience#position-aeva-1?hl=reducing%20incident%20resolution%20time%20by%2060%25"
+    )
+  })
+
+  it("falls back to link text when nothing was derived for the page", () => {
+    const excerpt =
+      "Led design and rollout of a multi-agent AI automation platform"
+
+    expect(
+      resolveHighlight("/experience#position-goteam-1", excerpt, highlights)
+    ).toBe(`/experience#position-goteam-1?hl=${encodeURIComponent(excerpt)}`)
+  })
+
+  it("leaves an hl the model supplied itself alone", () => {
+    const href = "/experience#position-aeva-1?hl=60%25"
+    expect(resolveHighlight(href, title, highlights)).toBe(href)
+  })
+
+  it("leaves a link alone when neither source has a phrase", () => {
+    expect(resolveHighlight("/projects", "my projects", highlights)).toBe(
+      "/projects"
+    )
   })
 })

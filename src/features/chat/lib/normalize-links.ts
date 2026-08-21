@@ -85,3 +85,27 @@ function stripQuery(href: string) {
 
   return anchor ? `${cleanPath}#${anchor}` : cleanPath
 }
+
+/**
+ * The `?hl=` for a link, taking the best-informed source that has one.
+ *
+ * An `hl` the model wrote itself wins, then the phrase derived server-side from
+ * what the answer verbatim reused, then the link text.
+ *
+ * Link text is last because it is the weakest signal of the three, and reading
+ * it first made the highlight worse rather than better: the model routinely
+ * links a section's title, and a corpus title like "Senior Full Stack Developer
+ * at Aeva AI Receptionist" is composed from two fields that the page renders as
+ * separate headings. Long enough to pass for an excerpt, findable nowhere — and
+ * it displaced the derived phrase, which would have matched.
+ */
+export function resolveHighlight(
+  href: string,
+  linkText: string,
+  highlights: Record<string, string> | undefined
+) {
+  return highlightFromLinkText(
+    applyDerivedHighlight(href, highlights),
+    linkText
+  )
+}

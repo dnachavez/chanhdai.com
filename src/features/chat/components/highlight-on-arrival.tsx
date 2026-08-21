@@ -33,6 +33,9 @@ const CHAT_UI_ATTRIBUTE = "data-chat-ui"
 /** Long enough to be a real quote, short enough not to paint half the page. */
 const MAX_PHRASE_LENGTH = 300
 
+/** A frame or two, so an expanding collapsible has painted its content. */
+const EXPAND_DELAY = 120
+
 /**
  * Base UI's collapsible is uncontrolled here and rendered from server
  * components, so its open state is only reachable through its trigger. Clicking
@@ -164,7 +167,23 @@ function mapNormalizedIndex(original: string, normalizedIndex: number) {
 }
 
 /**
- * Pulls the anchor and the highlight phrase out of the current URL.
+ * Unwraps every mark this component added.
+ *
+ * `normalize()` afterwards because unwrapping leaves the surrounding text split
+ * into adjacent nodes, and `markMatches` compares one text node at a time — a
+ * second highlight on the same page would silently miss any phrase crossing the
+ * seam left by the first.
+ */
+function clearMarks() {
+  for (const mark of document.querySelectorAll(`mark[${MARK_ATTRIBUTE}]`)) {
+    const parent = mark.parentNode
+    mark.replaceWith(...mark.childNodes)
+    parent?.normalize()
+  }
+}
+
+/**
+ * Pulls the anchor and the highlight phrase out of a url.
  *
  * `hl` is expected at the very end, inside the fragment
  * (`/experience#position-aeva-1?hl=phrase`), which is not the standard ordering
@@ -178,58 +197,109 @@ function mapNormalizedIndex(original: string, normalizedIndex: number) {
  *
  * The spec ordering is still accepted, so a link written either way works.
  */
-function readTarget() {
-  const [hash, hashQuery] = window.location.hash.slice(1).split("?")
+function readTarget(url: string) {
+  const { hash, search } = new URL(url, window.location.href)
+  const [id, hashQuery] = hash.slice(1).split("?")
 
   const phrase =
     new URLSearchParams(hashQuery ?? "").get("hl") ??
-    new URLSearchParams(window.location.search).get("hl")
+    new URLSearchParams(search).get("hl")
 
-  return { id: hash ? decodeURIComponent(hash) : "", phrase }
+  return { id: id ? decodeURIComponent(id) : "", phrase }
 }
 
 export function HighlightOnArrival() {
   const pathname = usePathname()
 
   useEffect(() => {
+    let cancelled = false
+    let timer = 0
+
+    function highlight(url: string) {
+      clearMarks()
+      window.clearTimeout(timer)
+
+      const { id, phrase } = readTarget(url)
+      if (!phrase || phrase.length > MAX_PHRASE_LENGTH) return
+
+      const target = id ? document.getElementById(id) : null
+      const root = target ?? document.body
+
+      /**
+       * Deferred a frame: expanding a collapsible mounts its panel, and the text
+       * to mark does not exist until that has painted.
+       */
+      expandAncestors(root)
+
+      timer = window.setTimeout(() => {
+        if (cancelled) return
+
+        const first = markMatches(root, phrase)
+        ;(first ?? target)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }, EXPAND_DELAY)
+    }
+
     /**
      * Read off `window` rather than through `useSearchParams`, which would force
      * a Suspense boundary and opt these otherwise-static pages out of
      * prerendering for a purely cosmetic effect.
      */
-    const { id, phrase } = readTarget()
-    if (!phrase || phrase.length > MAX_PHRASE_LENGTH) return
-
-    const target = id ? document.getElementById(id) : null
-    const root = target ?? document.body
-
-    let cancelled = false
+    highlight(window.location.href)
 
     /**
-     * Deferred a frame: expanding a collapsible mounts its panel, and the text
-     * to mark does not exist until that has painted.
+     * A citation pointing into the page the visitor is already on — the common
+     * case, since the panel travels with them and they tend to ask about what
+     * they are looking at — changes only the fragment. `usePathname` cannot see
+     * that, and the App Router navigates by `pushState`, which fires neither
+     * `hashchange` nor `popstate`. So nothing above re-runs and the click does
+     * nothing at all.
+     *
+     * Reading the phrase off the link rather than off `window.location` also
+     * sidesteps waiting for the router to commit, and lets the same link work
+     * twice in a row.
+     *
+     * Capture phase because `Link` calls `preventDefault` on its way past, and a
+     * listener that ran afterwards could not tell a handled navigation from a
+     * cancelled one.
      */
-    expandAncestors(root)
+    function onClick(event: MouseEvent) {
+      if (event.button !== 0) return
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return
+      }
 
-    const timer = window.setTimeout(() => {
-      if (cancelled) return
+      const target = event.target
+      const anchor = target instanceof Element ? target.closest("a") : null
+      if (!(anchor instanceof HTMLAnchorElement)) return
+      if (anchor.target && anchor.target !== "_self") return
 
-      const first = markMatches(root, phrase)
-      ;(first ?? target)?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      })
-    }, 120)
+      const url = new URL(anchor.href, window.location.href)
+      if (url.origin !== window.location.origin) return
+      // A different page changes `pathname`, which re-runs the effect anyway.
+      if (url.pathname !== window.location.pathname) return
+
+      highlight(url.href)
+    }
+
+    function onPopState() {
+      highlight(window.location.href)
+    }
+
+    document.addEventListener("click", onClick, true)
+    window.addEventListener("popstate", onPopState)
 
     return () => {
       cancelled = true
       window.clearTimeout(timer)
+      document.removeEventListener("click", onClick, true)
+      window.removeEventListener("popstate", onPopState)
 
       // Unwrap on navigation away, so a client-side route change does not leave
       // stale highlights behind on a page that is reused.
-      for (const mark of document.querySelectorAll(`mark[${MARK_ATTRIBUTE}]`)) {
-        mark.replaceWith(...mark.childNodes)
-      }
+      clearMarks()
     }
   }, [pathname])
 
