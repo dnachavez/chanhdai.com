@@ -22,6 +22,19 @@
  * point: the product already defines thinking aloud as a broken reply, so the
  * only new thing here is refusing to render one.
  *
+ * Borrowing an offline assertion for runtime needs the higher bar `output-tripwire.ts`
+ * sets out — a false positive there fails a build, here it costs a real
+ * conversation. Measured against 264 replies from three scheduled scans: two are
+ * suppressed and both are dumps, opening "We need to answer in Tagalog? The user
+ * wrote:" and "The user is asking for the exact title, date, venue". Nothing else
+ * fires, and neither do the 22 replies of the regression suite or the 385
+ * paragraphs of the corpus an answer quotes from.
+ *
+ * The pattern to watch is `first|next|now|so` followed by `I`, which would match
+ * a real "First, I need to understand the problem". It did not fire once in those
+ * 264, so it is kept rather than trimmed on a hypothetical — but it is the one
+ * that would cost an answer if this ever does misfire.
+ *
  * Suppressing the whole reply rather than trimming a preamble, because neither
  * captured dump ever reaches an answer — both run to the token ceiling and stop
  * mid-sentence. With nothing emitted, `createAnswerTransform` falls through to
