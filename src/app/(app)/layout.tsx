@@ -1,6 +1,6 @@
 import { FloatingActions } from "@/components/floating-actions"
 import { SiteBottomNav } from "@/components/site-bottom-nav"
-import { SiteFooter } from "@/components/site-footer"
+import { SiteFooterCad } from "@/components/site-footer-cad"
 import { SiteHeader } from "@/components/site-header"
 import { ChatProvider } from "@/features/chat/components/chat-provider"
 import { HighlightOnArrival } from "@/features/chat/components/highlight-on-arrival"
@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="group/layout relative isolate">
         <SiteHeader />
         <main className="max-w-screen overflow-x-clip px-2">{children}</main>
-        <SiteFooter />
+        <SiteFooterCad />
         <div
           className="pointer-events-none fixed inset-x-0 bottom-0 z-50"
           aria-hidden
