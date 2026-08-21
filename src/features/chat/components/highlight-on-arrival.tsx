@@ -68,18 +68,16 @@ function normalize(text: string) {
 }
 
 /**
- * Wraps every occurrence of `phrase` beneath `root` in a `<mark>`.
+ * Every markable text node beneath `root`, flattened into one string.
  *
- * Walks text nodes rather than touching `innerHTML`, so the phrase — which
- * arrives from a URL — is only ever compared as text and never parsed as markup.
- * Matching is per text node: a phrase broken across an inline element boundary
- * (a bolded word mid-sentence) is missed, which costs a highlight rather than
- * correctness.
+ * Searching the concatenation rather than each node in turn is what lets a
+ * phrase cross an inline element. "…platform for Fox Three Partners" is three
+ * text nodes on the page because the company name is a link, and eighteen of the
+ * corpus's entries carry an inline link like it; matching per node found none of
+ * them. The marks are applied back per node afterwards, which is the only place
+ * a `Range` can safely be surrounded.
  */
-function markMatches(root: Element, phrase: string) {
-  const needle = normalize(phrase).toLowerCase()
-  if (!needle) return null
-
+function collectText(root: Element) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (node) => {
       const parent = node.parentElement
@@ -94,76 +92,133 @@ function markMatches(root: Element, phrase: string) {
         return NodeFilter.FILTER_REJECT
       }
 
-      return normalize(node.nodeValue ?? "")
-        .toLowerCase()
-        .includes(needle)
-        ? NodeFilter.FILTER_ACCEPT
-        : NodeFilter.FILTER_REJECT
+      return NodeFilter.FILTER_ACCEPT
     },
   })
 
-  const targets: Text[] = []
-  let current = walker.nextNode()
-  while (current) {
-    targets.push(current as Text)
-    current = walker.nextNode()
+  const chunks: Array<{ node: Text; start: number }> = []
+  let text = ""
+
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    chunks.push({ node: node as Text, start: text.length })
+    text += node.nodeValue ?? ""
   }
 
-  let first: HTMLElement | null = null
-
-  for (const node of targets) {
-    const value = node.nodeValue ?? ""
-    const index = normalize(value).toLowerCase().indexOf(needle)
-    if (index === -1) continue
-
-    /**
-     * The index came from the normalized string, so it has to be mapped back
-     * onto the original — collapsing a run of whitespace shifts every offset
-     * after it.
-     */
-    const start = mapNormalizedIndex(value, index)
-    const end = mapNormalizedIndex(value, index + needle.length)
-    if (start === -1 || end === -1) continue
-
-    const range = document.createRange()
-    range.setStart(node, start)
-    range.setEnd(node, Math.min(end, value.length))
-
-    const mark = document.createElement("mark")
-    mark.setAttribute(MARK_ATTRIBUTE, "true")
-    // The site's own text-selection colours, so an assistant highlight reads as
-    // "this is the bit" in exactly the way a manual selection does.
-    mark.className = "rounded-sm bg-selection px-0.5 text-selection-foreground"
-
-    try {
-      range.surroundContents(mark)
-    } catch {
-      // The range crossed an element boundary. Skip this occurrence.
-      continue
-    }
-
-    first ??= mark
-  }
-
-  return first
+  return { chunks, text }
 }
 
-/** Offset in the original string corresponding to an offset in its normalized form. */
-function mapNormalizedIndex(original: string, normalizedIndex: number) {
-  let seen = 0
+/**
+ * Whitespace-collapsed text, plus each collapsed character's offset in the
+ * original.
+ *
+ * The map is built in the same pass rather than recovered by a second one, so
+ * an offset found in the collapsed string turns back into a DOM offset without
+ * two tokenisations having to agree.
+ */
+function collapseWhitespace(text: string) {
+  const offsets: number[] = []
+  let collapsed = ""
   let previousWasSpace = false
 
-  for (let index = 0; index < original.length; index += 1) {
-    if (seen === normalizedIndex) return index
-
-    const isSpace = /\s/.test(original[index])
+  for (let index = 0; index < text.length; index += 1) {
+    const isSpace = /\s/.test(text[index])
     if (isSpace && previousWasSpace) continue
 
-    seen += 1
+    collapsed += isSpace ? " " : text[index]
+    offsets.push(index)
     previousWasSpace = isSpace
   }
 
-  return seen === normalizedIndex ? original.length : -1
+  offsets.push(text.length)
+
+  return { collapsed, offsets }
+}
+
+function createMark() {
+  const mark = document.createElement("mark")
+  mark.setAttribute(MARK_ATTRIBUTE, "true")
+  // The site's own text-selection colours, so an assistant highlight reads as
+  // "this is the bit" in exactly the way a manual selection does.
+  mark.className = "bg-selection text-selection-foreground"
+  return mark
+}
+
+/**
+ * Rounds and pads one occurrence at its ends only.
+ *
+ * An occurrence broken over an inline element is several marks, and giving each
+ * of them the full treatment pinched the highlight at every join — two rounded
+ * corners meeting mid-word, which reads as three highlights rather than one
+ * sentence.
+ */
+function styleEdges(marks: HTMLElement[]) {
+  marks[0]?.classList.add("rounded-l-sm", "pl-0.5")
+  marks[marks.length - 1]?.classList.add("rounded-r-sm", "pr-0.5")
+}
+
+/**
+ * Wraps every occurrence of `phrase` beneath `root` in one or more `<mark>`s.
+ *
+ * Walks text nodes rather than touching `innerHTML`, so the phrase — which
+ * arrives from a URL — is only ever compared as text and never parsed as markup.
+ *
+ * Returns the first mark in document order, for the caller to scroll to.
+ */
+function markMatches(root: Element, phrase: string) {
+  const needle = normalize(phrase).trim().toLowerCase()
+  if (!needle) return null
+
+  const { chunks, text } = collectText(root)
+  const { collapsed, offsets } = collapseWhitespace(text)
+  const haystack = collapsed.toLowerCase()
+
+  const spans: Array<[number, number]> = []
+  for (
+    let at = haystack.indexOf(needle);
+    at !== -1;
+    at = haystack.indexOf(needle, at + needle.length)
+  ) {
+    spans.push([offsets[at], offsets[at + needle.length]])
+  }
+
+  if (spans.length === 0) return null
+
+  /**
+   * Right to left, because surrounding a range splits its text node and leaves
+   * the original as the part before the split — so every offset to the left of
+   * one that has already been wrapped is still valid, and none of this has to be
+   * recomputed as the DOM changes underneath it.
+   */
+  const marksBySpan: HTMLElement[][] = spans.map(() => [])
+
+  for (let index = chunks.length - 1; index >= 0; index -= 1) {
+    const { node, start } = chunks[index]
+    const end = start + (node.nodeValue ?? "").length
+
+    for (let span = spans.length - 1; span >= 0; span -= 1) {
+      const from = Math.max(spans[span][0], start) - start
+      const to = Math.min(spans[span][1], end) - start
+      if (to <= from) continue
+
+      // The slice of a match that falls in this node can be the whitespace
+      // between two of them, which is a mark with nothing in it.
+      if (!(node.nodeValue ?? "").slice(from, to).trim()) continue
+
+      const mark = createMark()
+      const range = document.createRange()
+      range.setStart(node, from)
+      range.setEnd(node, to)
+      range.surroundContents(mark)
+
+      marksBySpan[span].push(mark)
+    }
+  }
+
+  // Filled right to left, so each occurrence's pieces need putting back in
+  // reading order before its ends can be told apart.
+  for (const marks of marksBySpan) styleEdges(marks.reverse())
+
+  return root.querySelector<HTMLElement>(`mark[${MARK_ATTRIBUTE}]`)
 }
 
 /**
