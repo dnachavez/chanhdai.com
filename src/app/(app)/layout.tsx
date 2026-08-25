@@ -35,8 +35,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         */}
         <HighlightOnArrival />
         {/*
-          Mounted after the bottom fade so the buttons paint above it. Both sit
-          at z-50; the fade is pointer-events-none, so only stacking order
+          Mounted after the bottom fade so the launcher paints above it. Both
+          sit at z-50; the fade is pointer-events-none, so only stacking order
           matters.
         */}
         <FloatingActions />

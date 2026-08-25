@@ -15,7 +15,6 @@ import {
   LayersIcon,
   LineChartIcon,
   MessageCircleIcon,
-  MonitorIcon,
   MoonStarIcon,
   QuoteIcon,
   RssIcon,
@@ -351,7 +350,7 @@ export function CommandMenu({
                 onHighlight={handleCommandHighlight}
                 onSelect={createThemeHandler("system")}
               >
-                <MonitorIcon />
+                <LaptopMinimalIcon />
                 System
               </CommandMenuItem>
             </CommandGroup>

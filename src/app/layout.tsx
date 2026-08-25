@@ -46,7 +46,10 @@ function getWebSiteJsonLd(): WithContext<WebSite> {
 // Thanks @shadcn-ui, @tailwindcss
 const darkModeScript = String.raw`
   try {
-    if (localStorage.theme === 'dark' || ((!('theme' in localStorage) || localStorage.theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    var pref = localStorage.theme === 'light' || localStorage.theme === 'dark' ? localStorage.theme : 'system'
+    document.documentElement.dataset.themePreference = pref
+
+    if (pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.querySelector('meta[name="theme-color"]').setAttribute('content', '${META_THEME_COLORS.dark}')
     }
   } catch (_) {}
@@ -144,7 +147,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={fontVariables} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={fontVariables}
+      // Matches `defaultTheme`; the head script below corrects it from
+      // localStorage before anything paints.
+      data-theme-preference="system"
+      suppressHydrationWarning
+    >
       <head>
         <script
           type="text/javascript"
