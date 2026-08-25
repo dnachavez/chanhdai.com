@@ -34,7 +34,10 @@ export function ChatSuggestions({
           <button
             type="button"
             disabled={disabled}
-            className="tag-base cursor-pointer text-left transition-[background-color,color] ease-out hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            // `tag-base` is the site-wide pill; squared off here to match the
+            // rest of the chat surface, which `cn` cannot do for us because the
+            // `rounded-full` is inside the utility rather than on the element.
+            className="tag-base cursor-pointer rounded-none text-left transition-[background-color,color] ease-out hover:bg-accent hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => onSelect(question)}
           >
             {question}

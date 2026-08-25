@@ -8,6 +8,11 @@ import type { DocPreview } from "@/features/doc/types/document"
 
 const CommandMenu = dynamic(() => import("@/components/command-menu"))
 const NavMobile = dynamic(() => import("@/components/nav-mobile"))
+// Dynamic like its neighbours, which also keeps `CHAT_COPY` — and the whole
+// `USER` object behind it — out of every page's main bundle.
+const ChatNavItem = dynamic(
+  () => import("@/features/chat/components/chat-nav-item")
+)
 
 export function SiteBottomNav() {
   const docs = getAllDocs()
@@ -31,6 +36,7 @@ export function SiteBottomNav() {
         orientation="vertical"
         className="mr-1 ml-2.5 data-vertical:h-6 data-vertical:self-center"
       />
+      <ChatNavItem />
       <NavMobile items={MOBILE_NAV} />
     </div>
   )
