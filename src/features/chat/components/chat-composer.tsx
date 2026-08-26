@@ -29,6 +29,16 @@ const WRAPPERS = {
 type Selection = { value: string; start: number; end: number }
 
 /**
+ * Squared off to the textarea's collapsed height: one line box plus `py-2` and
+ * the border. Two values because the field is `text-base` below `md` to stop
+ * iOS zooming it on focus, which makes that line box 4px taller there.
+ *
+ * Only the collapsed height — the row is `items-end`, so once the field grows
+ * past one line the button stays this size and sits at the bottom of it.
+ */
+const SEND_BUTTON_CLASS = "size-10.5 rounded-none md:size-9.5"
+
+/**
  * Toggles a wrapper around the selection, or inserts an empty pair with the
  * caret between the delimiters when nothing is selected.
  */
@@ -148,7 +158,7 @@ export function ChatComposer({
         disabled={disabled}
         maxLength={MAX_MESSAGE_LENGTH}
         placeholder={CHAT_COPY.placeholder}
-        className="field-sizing-content max-h-32 min-h-9 flex-1 resize-none rounded-lg border border-input bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
+        className="field-sizing-content max-h-32 min-h-9 flex-1 resize-none rounded-none border border-input bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
         onChange={(event) => onChange(event.target.value)}
         onPaste={(event) => {
           const html = event.clipboardData.getData("text/html")
@@ -209,6 +219,7 @@ export function ChatComposer({
 
       {isBusy ? (
         <Button
+          className={SEND_BUTTON_CLASS}
           type="button"
           variant="secondary"
           size="icon-sm"
@@ -219,6 +230,7 @@ export function ChatComposer({
         </Button>
       ) : (
         <Button
+          className={SEND_BUTTON_CLASS}
           type="submit"
           size="icon-sm"
           aria-label="Send message"

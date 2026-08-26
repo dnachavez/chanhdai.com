@@ -139,7 +139,7 @@ export function ChatConversation({ className }: { className?: string }) {
           if (message.role === "user") {
             return (
               <div key={message.id} className="flex justify-end">
-                <div className="prose prose-sm max-w-[85%] prose-ncdai rounded-xl bg-muted px-3 py-2 text-sm wrap-break-word prose-zinc dark:prose-invert prose-p:first:mt-0 prose-p:last:mb-0">
+                <div className="prose prose-sm max-w-[85%] prose-ncdai rounded-none bg-muted px-3 py-2 text-sm wrap-break-word prose-zinc dark:prose-invert prose-p:first:mt-0 prose-p:last:mb-0">
                   <ChatMarkdown>{textOf(message)}</ChatMarkdown>
                 </div>
               </div>

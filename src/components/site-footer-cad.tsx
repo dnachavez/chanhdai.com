@@ -4,6 +4,7 @@ import { LICENSE, SOURCE_CODE_GITHUB_URL } from "@/config/site"
 import type { BuildInfo } from "@/lib/build-info"
 import { getBuildInfo, getStack } from "@/lib/build-info"
 import { cn } from "@/lib/utils"
+import { BackToTop } from "@/components/back-to-top"
 import { ChanhDaiMark } from "@/components/chanhdai-mark"
 import { DmcaIcon, GitHubIcon, LinkedInIcon, XIcon } from "@/components/icons"
 import { SiteFooterInteractiveLogotype } from "@/components/site-footer-brand"
@@ -161,7 +162,7 @@ export function SiteFooterCad() {
 
         <div className="screen-line-top h-4" />
 
-        <div className="screen-line-top screen-line-bottom flex items-center gap-3 px-4 py-3 text-muted-foreground">
+        <div className="screen-line-top screen-line-bottom flex items-center gap-2 px-4 py-3 text-muted-foreground sm:gap-3">
           <Link href="/" className="mr-auto text-foreground">
             <ChanhDaiMark className="h-4" />
           </Link>
@@ -214,6 +215,10 @@ export function SiteFooterCad() {
           >
             <DmcaIcon className="h-4 w-auto" />
           </a>
+
+          <Separator />
+
+          <BackToTop />
         </div>
       </div>
 

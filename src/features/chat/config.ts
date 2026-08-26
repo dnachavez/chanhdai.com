@@ -160,7 +160,22 @@ export const MAX_SUGGESTIONS = 3
 export const MAX_OPENERS = 4
 
 export const CHAT_COPY = {
-  title: "Ask me anything",
+  /**
+   * An invitation in Dan's own voice rather than a role, because the model
+   * answers as Dan in the first person — see `system-prompt.ts`, which forbids
+   * it from calling itself an assistant. A label reading "assistant"
+   * contradicted every reply underneath it.
+   *
+   * `subtitle` survives as the dialog's accessible description.
+   */
+  name: USER.displayName,
+  role: "Ask me anything",
+  /**
+   * The floating launcher's own label, distinct from `name`: the header names
+   * who is answering once the panel is open, the button has to say what it is
+   * from across the page.
+   */
+  launcher: `Chat with ${USER.firstName}`,
   subtitle: "Answers come from what's published on this site.",
   placeholder: "Ask about my work…",
   error: `Something broke. Email me: ${CONTACT_EMAIL}`,
